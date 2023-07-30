@@ -1,0 +1,202 @@
+{% extends 'ssl_layout.html' %}
+
+{% block content %}
+
+<div id="maindiv3">
+  
+  <details>
+    <summary>Motivation</summary>
+    Diversity of traits in living organisms is controlled by inherited genes. 
+    Therefore, the success of selective breeding tasks using genetic data predominant in the agricultural sciences is highly correlated with the degree of genetic variants present in the founding populations used for that breeding program. Today, genetic data can be digitally synthesized broadening the genetic variation range that can be obtained for founding a breeding program. A large number of populations, say $n \ge 50$ can now be surveyed as possible candidates that could be in the founder set.
+    <p>
+      Given a number of populations, $n$, we typically want to select $k\le n$ founding populations for a breeding program in a way that will maximize the genetic variation (or minimize the co-ancestry) of their offspring. For each $1 \le i\le n$ population, available information is a genomic dataset of allele frequencies for $l$ loci. 
+    </p>
+  </details>
+  <details>
+    <summary>Problem Statement</summary>
+    <p>
+      It is usually assumed that all available $n$ populations can be combined and sampled for use in the breeding program, that is, we choose $k=n$ populations. This plan was a sensible about two decades ago when genotyping was expensive. In contrast, in recent times, large-scale genotyping data is cheaper to obtain.  However, choosing broodstock from all of the populations is likely redundant (diminishing returns).
+    </p>
+    <p>
+      For optimum cost-effective planning, we would like to evaluate each possible $k$ founding set, where $1\le k\le n$, and pick a $k$ combination at which a further increase in $k$, starts to add little to the average genetic diversity in the group. For example, given a dataset of $n=20$ populations, we may find that choosing between $k=5$ to $k=8$ populations is sufficient to create a successful breeding program.
+    </p>
+  </details>
+  
+  <details>
+    <summary>Objective</summary>
+    Here we present a self-supervised learning algorithm for efficiently solving large-scale problems of this nature. 
+
+    <p>
+      Our tool assists with making the decision of which $k$ combination of the $n$ populations to choose and the relative proportion (or number) of broodstock from each? 
+    </p>
+    
+    Given known allele frequencies for $l$ loci in $n$ available populations. The goal of our learning algorithm is to both select a subset $k \le n$ populations and determine the number of individuals to select from each of $k$ populations in a way that maximizes the genetic variation of the given group, with the least diminishing return.
+  </details>
+
+  <details>
+    <summary> Quick Start </summary>
+    <div>
+      Choose a configuration. Upload your genetic dataset of $n$ populations with allele frequencies. Header of dataset should be of the common form below: <br><br>
+      <table>
+        <thead>
+          <tr>
+            <th>CHROM</th>
+            <th>POS</th>
+            <th>N_ALLELES</th>
+            <th>N_CHR</th>
+            <th>{ALLELE:FREQ}</th>
+          </tr>
+        </thead>
+      </table>
+      where <strong>CHROM</strong> is a chromosome name, <strong>POS</strong> is a position (loci) in that chromosome, <strong>N_ALLELES</strong> is the number of alleles, <strong>N_CHR</strong> is related to the sample size that was used to calculate the allele frequencies, <strong>{ALLELE:FREQ}</strong> is the dictionary of alleles and their frequencies. 
+      
+      <p>Each line of the $n$ input files should have the same chromosome name and position for all populations. We adopt this particular format of input file, since it can be easily generated from common genotype file formats with existing, widely used software.
+      </p>
+      <p>Start learning.</p>
+    </div>
+  </details>
+  
+  
+  <form enctype="multipart/form-data" 
+        hx-post= {{ url_for('setup') }} hx-push-url="true"
+        hx-encoding='multipart/form-data'
+        _='on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100'>
+    <fieldset id="configfield">
+      <legend> Setting </legend>
+
+        <fieldset class="inner">
+          <legend>Data Loader</legend>
+
+          <div class="bsize">
+            <label for="batchsize">Batch size</label>
+            <input name="batchsize" id="batchsize" value="100" min="1" type="number">  
+          </div>
+
+          <div class="streamer">
+            <label> Streaming </label>
+            <input name="streamer" id="streamer" value="True" type="radio" /> 
+            <label for="streamer">True</label>
+
+            <input name="streamer" id="streamer2" value="False" type="radio" aria-checked="true" checked /> 
+            <label for="streamer2">False</label>
+          </div>
+
+        </fieldset>
+
+        <fieldset class="inner">
+          <legend class="fntsmall">Learning Algorithm (AutoSGM)</legend>
+          <div class="learner">
+
+          <input name="learner" id="learner" value="True" type="radio" aria-checked="true" checked /> 
+          <label for="learner">Linear</label>
+
+          <input name="learner" id="learner2" value="False" type="radio" /> 
+          <label for="learner2">Generic</label>
+
+          </div>
+        </fieldset>
+
+      <input name="files" id="inpfile1" class="uplfile1" type='file' data-mult-caption="{count} files selected" 
+      script= "on change 
+      set $n to 'You chose ' + me.files.length + ' file(s).' 
+      then put $n into the next <label/> then set #progress.value to 0" multiple />
+      <label for="inpfile1" > Choose Files </label>
+      <br/>
+
+      <button> Upload </button>
+      <progress id='progress' class="progress-bar" value='0' max='100'></progress>
+    
+    </fieldset>
+
+  </form>
+
+  <div>
+    <div id="runner1">
+      <button class="sbutton sbutton1 below"
+      hx-get="/view" 
+      hx-target="#viewtarget" 
+      hx-select="#maindiv" 
+      hx-swap="innerHTML transition:true swap:100ms settle:100ms"
+      hx-indicator="#indicator"> 
+      Start Learning 
+      </button>
+      <img id="indicator" class="htmx-indicator fillsvg" src="/static/svg-loaders/spinning-circles.svg">
+    </div>
+
+    <div id="runner2" class="slide-it">
+      <button class="sbutton sbutton1"
+      hx-get="/view" 
+      hx-target="#maindiv3"
+      hx-select="#maindiv"
+      hx-swap="innerHTML transition:true"
+      hx-indicator="#indicatorslide"
+      hx-push-url="true"> 
+      Start Learning <span><img src="/static/svg-loaders/open-external-link-icon.svg" style="width: 14px;"></span>
+      </button>
+      <img id="indicatorslide" class="htmx-indicator fillsvg" src="/static/svg-loaders/spinning-circles.svg">
+    </div>
+  </div>
+
+  <!-- <div>
+  <button hx-get="/view" 
+  hx-target="#maindiv" 
+  hx-select="#maindiv" 
+  hx-swap="innerHTML  transition:true">
+  Run Learner
+  </button>
+  </div> -->
+
+  <!-- <div class="slide-it">
+    <button class="sbutton sbutton1"
+    hx-get="/view" 
+    hx-target="body"
+    hx-swap="innerHTML transition:true"
+    hx-indicator="#indicatorslide"
+    hx-push-url="true"> 
+    Start Learning | response new page
+    </button>
+    <img id="indicatorslide" class="htmx-indicator fillsvg" src="/static/svg-loaders/spinning-circles.svg">
+  </div> -->
+
+  <!-- <div>
+    <button class="sbutton sbutton1"
+    hx-get="/viewpg" 
+    hx-target="closest div"
+    hx-select="#maindiv"
+    hx-swap="innerHTML transition:true swap:100ms settle:100ms"
+    hx-indicator="#indicatorslide2"> 
+    Start Learning | response here
+    </button>
+    <img id="indicatorslide2" class="htmx-indicator fillsvg" src="/static/svg-loaders/spinning-circles.svg">
+  </div> -->
+
+  <!-- <div >
+    <button class="sbutton sbutton1"
+    hx-get="/viewpg" 
+    hx-target="#viewtarget" 
+    hx-select="#maindiv" 
+    hx-swap="innerHTML transition:true swap:100ms settle:100ms"
+    hx-indicator="#indicator"> 
+    Start Learning 
+    </button>
+    <img id="indicator" class="htmx-indicator fillsvg" src="/static/svg-loaders/spinning-circles.svg">
+  </div> -->
+
+  <!-- <div class="slide-it">
+    <button class="fade-me-out" 
+    hx-get="/viewpg" 
+    hx-select="#maindiv"
+    hx-swap="innerHTML transition:true swap:500ms settle:500ms"
+    hx-indicator="#indicatorslide3"> 
+    Start Learning 3
+    </button>
+    <img id="indicatorslide3" class="htmx-indicator fillsvg" src="/static/svg-loaders/spinning-circles.svg">
+  </div> -->
+
+
+<div id="viewtarget">
+</div>
+
+</div>
+
+{% endblock %}

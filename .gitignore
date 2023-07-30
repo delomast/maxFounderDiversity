@@ -1,2 +1,11 @@
-/.vscode
-/get-pip.py
+.venv
+misc
+templates/greeting.html
+templates/simple.html
+templates/test_plot.html
+templates/index.html
+templates/layout.html
+__pycache__
+aipy/__pycache__
+datapy/__pycache__
+static/session/*

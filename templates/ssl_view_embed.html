@@ -1,0 +1,99 @@
+{% block content %}
+
+<div id="maindiv">
+
+<div>
+  <h5> Optimum Population Sets (or Combinations) </h5> 
+
+  <div>
+    <img src={{ popcombsfig }} alt="chart" class="trplt"/>
+  </div>
+
+  <table id="optpopset">
+    <thead>
+      <tr>
+        <th> \( k \) </th>
+        {% for col in optcombs_cols %}
+          {% if col == "combs_idx"%}
+            <th> Foundation Set,  \( \mathcal{P}_k \) </th>
+          {% elif col == "z"%}
+            <th> Relative Genetic Variation,  \( z_k \) </th>
+          {% elif col == "dz"%}
+            <th> \( \Delta z_k \) </th>
+          {% else %}
+            <th> {{ col }} </th>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% set optset = range(klow+1,kupp+2) %}
+      {% for pop_idx, row in zip(poploptcombs_idxs,optcombs_rowdata) %}
+        {% set k =  pop_idx+1 %}
+        {% if k in optset %}
+        <tr class="optset">
+        {% else %}
+        <tr>
+        {% endif %}
+          <td> {{ k }} </td>
+          {% for col, cell in zip(optcombs_cols, row) %}
+            {% if col != "combs_idx"%}
+              {% set fracval =  cell %}
+              <td>{{ '%0.4f' % fracval |float }}</td>
+            {% else %}
+              <td>{{ cell }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+<div>
+  <h5> Relative Contributions</h5>  
+
+  <div>
+  <img src={{ relctrbsfig }} alt="chart" height="100" width="100" class="trplt" />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        {% for col in relctrbs_cols %}
+          {% if col == "idx" %}
+            <th> Population Index, \(i\) </th>
+          {% elif col == "p" %}
+            <th> {{ "Relative contribution (%)" }}, \(p_i\) </th>
+          {% else %}
+            <th> {{ col }} </th>
+          {% endif %}
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for ridx, row in zip(relctrbs_idxs,relctrbs_rowdata) %}
+        <tr>
+          {% for rcol, rcell in zip(relctrbs_cols, row) %}
+            {% if rcol == "idx"%}
+              <td>{{ int(rcell) }}  </td>
+            {% elif rcol == "p" %}
+              {% set percentval =  rcell*100 %}
+              <td>{{ '%2.2f' % percentval |float }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p></p>
+
+</div>
+<script src="/static/js/mathjax_config.js" defer></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</div>
+
+{% endblock %}
