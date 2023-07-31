@@ -1,6 +1,6 @@
     
 ## Self-supervised Learning of Optimum Contributions: An Application in Maximizing Genetic Variation
-![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/django.yml/badge.svg)
+![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/ci.yml/badge.svg)
 
 Algorithm to choose which populations to sample broodstock from and in what proportions to maximize genetic diversity (expected heterozygosity) in the population of offspring given a set of populations that could be sampled from (with known allele frequencies at a common set of loci).
 
