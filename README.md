@@ -66,21 +66,17 @@ Install a python virtual environment and with the requirements.txt file
 
 `pip install -r /path/to/requirements.txt`
 
+From the root path: 
+
 #### Web Frontend
 In your terminal, run: 
-
 `
 flask --app sslview run --debug --host=0.0.0.0  
 `
-
 to access the tool in form of a web application.
 
 #### Command Line Interface CLI
-Run: 
-
-`python .\ssltest.py`
-
-to test the tool.
+Run: `python ssltest.py` to test the tool.
 
 
 
