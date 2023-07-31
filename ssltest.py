@@ -158,7 +158,7 @@ for epoch in range(MAX_EPOCHS):
   print("End epoch.")
   
   # dwp
-  p = mdl.Di.mm(mdl.weight.mm(mdl.x)).softmax(dim=0)
+  # p = mdl.Di.mm(mdl.weight.mm(mdl.x)).softmax(dim=0)
   ''' PART 2: CHOOSE POPULATIONS. '''
   # sort contributions 
   p_numpy = p.detach().numpy(force=True).flatten()
@@ -262,7 +262,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].set_xlabel(r"$\mathrm{\mathsf{Populations}},~\mathrm{\mathbf{P}}_i$")
   ax[0].set_ylabel(r"$\mathrm{\mathsf{optimum~relative}}$"+"\n"+"$\mathrm{\mathsf{contributions}},~p_i$")
   # plt.legend()
-  figpath = (SERVER_ROOT / f"static/trainplts/relctrbs_sslplot.png").resolve()._str
+  figpath = str((SERVER_ROOT / f"static/trainplts/relctrbs_sslplot.png").resolve())
   plt.savefig(figpath, dpi=300)
   plt.close(fig)
   
@@ -278,7 +278,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].annotate(r'$\mathcal{P}^\star$',xy=(klow,z[klow]),xytext=(klow+(kupp-klow)/2,z[klow]))
   plt.xticks(x, pop_xticks, rotation=60)
   plt.legend()
-  figpath = (SERVER_ROOT / f"static/trainplts/popchoice_sslplot.png").resolve()._str
+  figpath = str((SERVER_ROOT / f"static/trainplts/popchoice_sslplot.png").resolve())
   plt.savefig(figpath, dpi=300)
   # plt.show()
   plt.close(fig)
@@ -297,7 +297,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
   
   plt.legend()
-  figpath = (SERVER_ROOT / f"static/trainplts/loss_plot.png").resolve()._str
+  figpath = str((SERVER_ROOT / f"static/trainplts/loss_plot.png").resolve())
   plt.savefig(figpath, dpi=300)
   plt.close(fig)
   # plt.show()
