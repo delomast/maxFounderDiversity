@@ -35,6 +35,25 @@ Given a number of populations, $n$, we typically want to select $k\le n$ foundin
   Given known allele frequencies for $l$ loci in $n$ available populations. The goal of our learning algorithm is to both select a subset $k \le n$ populations and determine the number of individuals to select from each of $k$ populations in a way that maximizes the genetic variation of the given group, with the least diminishing return.
 </details>
 
+
+
+#### Installing
+
+<a>https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/ </a>
+Install a python virtual environment and with the requirements.txt file.
+
+`pip install -r /path/to/requirements.txt`
+
+From the root path: 
+#### Command Line Interface CLI
+Run: `python ssltest.py` to test the tool.
+
+#### Web Frontend
+In your terminal, run: 
+`
+flask --app sslview run --debug --host=0.0.0.0  
+`
+to access the tool in form of a web application.
 <details>
   <summary> Quick Start </summary>
   <div>
@@ -57,25 +76,6 @@ Each line of the $n$ input files should have the same chromosome name and positi
 </div>
 </details>
 
-
-
-#### Installing
-
-<a>https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/ </a>
-Install a python virtual environment and with the requirements.txt file.
-
-`pip install -r /path/to/requirements.txt`
-
-From the root path: 
-#### Web Frontend
-In your terminal, run: 
-`
-flask --app sslview run --debug --host=0.0.0.0  
-`
-to access the tool in form of a web application.
-
-#### Command Line Interface CLI
-Run: `python ssltest.py` to test the tool.
 
 
 
