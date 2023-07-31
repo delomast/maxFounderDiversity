@@ -121,7 +121,7 @@ class aSGM():
 
             
     @torch.no_grad()
-    def compute_opt(self,step:Tensor|int,        
+    def compute_opt(self,step:Tensor,        
                 x_mat:Tensor, A_mat:Tensor, param:Tensor, param_grad:Tensor,
                 qk:Tensor,wk:Tensor,gk:Tensor,
                 mk:Tensor,dk:Tensor,sk:Tensor,lrk:Tensor,
