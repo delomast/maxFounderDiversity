@@ -3,7 +3,7 @@
 
 Algorithm to choose which populations to sample broodstock from and in what proportions to maximize genetic diversity (expected heterozygosity) in the population of offspring given a set of populations that could be sampled from (with known allele frequencies at a common set of loci).
 
-Developed with the application of creating base populations for aquaculture breeding programs in mind
+Developed with the application of creating base populations for aquaculture breeding programs in mind.
 
 <details>
 <summary>Motivation</summary>
@@ -62,12 +62,11 @@ Each line of the $n$ input files should have the same chromosome name and positi
 #### Installing
 
 <a>https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/ </a>
-Install a python virtual environment and with the requirements.txt file
+Install a python virtual environment and with the requirements.txt file.
 
 `pip install -r /path/to/requirements.txt`
 
 From the root path: 
-
 #### Web Frontend
 In your terminal, run: 
 `
