@@ -76,7 +76,8 @@ Each line of the $n$ input files should have the same chromosome name and positi
 </div>
 </details>
 
-
+#### Credits
+USDA-ARS AI-COE/SCINet Graduate Research Fellowship/Internship. 2023.
 
 
 
