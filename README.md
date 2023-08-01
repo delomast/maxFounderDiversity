@@ -39,24 +39,24 @@ Given a number of populations, $n$, we typically want to select $k\le n$ foundin
 
 
 #### Installing
+Clone this repo. Then, from the root path of this repo on your local machine:
 
 <a>https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/ </a>
 Install a python virtual environment and with the requirements.txt file.
 
-`pip install -r /path/to/requirements.txt`
+`pip install -r requirements.txt`
 
-From the root path: 
 #### Command Line Interface CLI
-Run: `python ssltest.py` to test the tool.
+To test the tool. Run: `python ssltest.py` 
 
 #### Web Frontend
 In your terminal, run: 
 `
 flask --app sslview run --debug --host=0.0.0.0  
 `
-to access the tool in form of a web application.
+to access the tool in form of a user-friendly web application.
 <details>
-  <summary> Quick Start </summary>
+  <summary> Quick Start (Web Frontend) </summary>
   <div>
       To start learning. Choose a configuration. Upload your genetic dataset of $n$ populations with allele frequencies. Header of dataset should be of the common form below: <br><br>
     <table>
