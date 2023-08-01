@@ -39,15 +39,14 @@ Given a number of populations, $n$, we typically want to select $k\le n$ foundin
 
 
 #### Installing
-Clone this repo. Then, from the root path of this repo on your local machine:
+Clone this repo. From the root path of this repo on your local machine:
 
-<a>https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/ </a>
-Install a python virtual environment and with the requirements.txt file.
+Install a python virtual environment (See: <a>https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/ </a>).
 
-`pip install -r requirements.txt`
+Install required python packages with the requirements.txt file `pip install -r requirements.txt`
 
 #### Command Line Interface CLI
-To test the tool. Run: `python ssltest.py` 
+Optional. To test the tool. Run: `python ssltest.py` 
 
 #### Web Frontend
 In your terminal, run: 
