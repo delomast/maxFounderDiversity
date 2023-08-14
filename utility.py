@@ -101,7 +101,7 @@ def trainer(A, mdl, USE_CUDA, MAX_STEPS, ERR_OPT_ACC, LIN_OPTIM_CHOICE, LOSS_LIS
 
 
 ''' PART 2: CHOOSE POPULATIONS. '''
-def choose_pops(POP_FILES, n, p):
+def choose_pops(POP_FILES, n, p, ismatrix= False):
   '''
   Choose Populations
 
@@ -139,7 +139,10 @@ def choose_pops(POP_FILES, n, p):
   kupp = np.where((z>=1/2)&(dz<1/6))[0][0]
 
   # get population names according to sorted contribs.
-  pop_names = [POP_FILES[p_id].split("\\")[-1].split("_af_")[0] for p_id in pop_sortidxs]
+  if not ismatrix:
+    pop_names = [POP_FILES[p_id].split("\\")[-1].split("_af_")[0] for p_id in pop_sortidxs]
+  else:
+    pop_names = [f"pop_{p_id}" for p_id in pop_sortidxs]
   combspop_nms = [pop_names[:p_idx+1] for p_idx in range(n)]
 
 

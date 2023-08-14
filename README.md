@@ -50,12 +50,29 @@ To test the tool. Run: `python ssltest.py`
 
 
 #### Command Line Interface CLI
-In your terminal, run sslcmd.py with any of the options below:
+In a terminal window, we provide the command **sslcmd** with options below:
 
 ``python sslcmd.py [-h] [-b BATCHSIZE] [-s STREAMER] [-l {linear,generic}] (--files FILES [FILES ...] | --source_dir SOURCE_DIR)``
 
+
+##### Examples:
+
+- ``py sslcmd.py --source_dir ./scratch -b 100``
+
+This tells the tool that the allele frequency data files are in a special directory located at './scratch' and configures the tool's data loader with a batch-size of 100.
+
+- ``py sslcmd.py --files .\scratch\subset_CH_NC_035781.1.vcf.gz.frq .\scratch\subset_CLP_NC_035781.1.vcf.gz.frq -b 10``
+
+This passess in a list of allele frequency data file paths, two in this case, to the tool and configures the tool's data loader with a batch-size of 10.
+
+- ``py sslcmd.py --coan_matrix ./scratch/co_mat.txt``
+- ``py sslcmd.py --coan_matrix ./scratch/co_mat.npy``
+- ``py sslcmd.py --coan_matrix ./scratch/co_mat.npz``
+
+These each passess in a file containing a co-ancestry matrix of n populations to the tool.
+
 #### Web Frontend
-In your terminal, run: 
+In a terminal, run: 
 `
 flask --app sslview run --debug --host=0.0.0.0  
 `

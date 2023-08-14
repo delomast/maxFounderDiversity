@@ -45,6 +45,9 @@ group.add_argument("--files",
 group.add_argument("--source_dir", 
                     help='directory path to source files (on disk)', 
                     type=Path)
+group.add_argument("--coan_matrix", 
+                    help='conacestry matrix path (on disk)', 
+                    type=Path)
 
 args = parser.parse_args()
 
@@ -65,7 +68,20 @@ print(args)
 # os.makedirs(DATA_PATH, exist_ok=True)
 # cfgs["DATA_PATH"] = str(DATA_PATH)
 
-if args.files:
+ismatrix = False # logic to know if a pre-computed co-ancestry matrix is used.
+
+ext = str(args.coan_matrix).split('.')
+
+if args.coan_matrix:
+  if ext[-1] in ['txt', 'csv']:
+    POP_FILES = np.loadtxt(args.coan_matrix)
+  if ext[-1] == 'npy':
+    POP_FILES = np.load(args.coan_matrix)
+  if ext[-1] == 'npz':
+    POP_FILES = np.load(args.coan_matrix)['arr_0']
+    
+  ismatrix = True
+elif args.files:
   inpfiles = []
   for file in args.files:
     inpfiles.append(file.name)
@@ -82,13 +98,16 @@ cfgs["S_PLOT_PATH"] = f"static/cmdsession/{secret_key}/trainplts"
   
 
 
-def run_cmd_ssl(cfgs, POP_FILES):
+def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
   
   SERVER_ROOT = Path(__file__).parents[0]
   PLOT_PATH = (SERVER_ROOT / cfgs["S_PLOT_PATH"] ).resolve()
   os.makedirs(PLOT_PATH, exist_ok=True)
-
-  N_EFF = len(POP_FILES)
+  
+  if not ismatrix:
+    N_EFF = len(POP_FILES)
+  else:
+    N_EFF = POP_FILES.shape[0]
   USE_CUDA = False
   MAX_BATCHSIZE = int(cfgs["MAX_BATCHSIZE"])
   MAX_EPOCHS = 1
@@ -113,8 +132,11 @@ def run_cmd_ssl(cfgs, POP_FILES):
 
 
   # batch_size: selected data size per batch
-  data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
-  n = data_ldr.neff
+  if not ismatrix:
+    data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
+    n = data_ldr.neff
+  else:
+    n = POP_FILES.shape[0]
 
 
   # instantiate self-supervised model
@@ -131,7 +153,7 @@ def run_cmd_ssl(cfgs, POP_FILES):
         AutoSGM(mdl.parameters(),auto=True, lr_init=1e-1, beta_in_smooth=0.9, usecuda=USE_CUDA)
         )
 
-
+  b_idx = 0
   for epoch in range(MAX_EPOCHS):
     ''' EPOCH BEGIN: A single pass through the data'''
     LOSS_LIST, FC_LOSS_LIST = [],[]
@@ -140,38 +162,51 @@ def run_cmd_ssl(cfgs, POP_FILES):
     ''' PART 1: LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
 
     # load dataset, and dataloader
-    for (b_idx, batch) in enumerate(data_ldr):
-      # print("epoch: " + str(epoch) + "   batch: " + str(b_idx)) 
-      # print(batch[0])  # homozygozity
-      # print(batch[1])  # heterozygozity
-      # print()
-      A =  (1 - batch[1] + batch[0])/(3)
-  
-      if STREAM_LEARN:
-      # -* learn for each batch stream of data
+    if not ismatrix:
+      for (b_idx, batch) in enumerate(data_ldr):
+        # print("epoch: " + str(epoch) + "   batch: " + str(b_idx)) 
+        # print(batch[0])  # homozygozity
+        # print(batch[1])  # heterozygozity
+        # print()
+        A =  (1 - batch[1] + batch[0])/(3)
+    
+        if STREAM_LEARN:
+        # -* learn for each batch stream of data
+          p = trainer(A,mdl,
+            USE_CUDA, MAX_STEPS, ERR_OPT_ACC, 
+            LIN_OPTIM_CHOICE, LOSS_LIST, FC_LOSS_LIST)
+        # -*
+
+      # -* learn after full pass over data
+      if not STREAM_LEARN or (STREAM_LEARN and epoch>0):
         p = trainer(A,mdl,
           USE_CUDA, MAX_STEPS, ERR_OPT_ACC, 
           LIN_OPTIM_CHOICE, LOSS_LIST, FC_LOSS_LIST)
       # -*
-
-    # -* learn after full pass over data
-    if not STREAM_LEARN or (STREAM_LEARN and epoch>0):
+      
+    else:
+      
+      b_idx = 0
+      A = torch.tensor(POP_FILES,dtype=torch.float)
+      if USE_CUDA: 
+        A = A.cuda()
       p = trainer(A,mdl,
-        USE_CUDA, MAX_STEPS, ERR_OPT_ACC, 
-        LIN_OPTIM_CHOICE, LOSS_LIST, FC_LOSS_LIST)
-    # -*
+          USE_CUDA, MAX_STEPS, ERR_OPT_ACC, 
+          LIN_OPTIM_CHOICE, LOSS_LIST, FC_LOSS_LIST)
+      
           
     ''' EPOCH END.'''
     walltime = (time.time() - walltime)/60 
     print(f"\nTotal batches: {b_idx+1}, time elapsed: {walltime:.2f}-mins") 
-    data_ldr.close()
-    data_ldr.batches = b_idx+1
+    if not ismatrix:
+      data_ldr.close()
+      data_ldr.batches = b_idx+1
     print("End epoch.")
 
     ''' PART 2: CHOOSE POPULATIONS. '''
     p = mdl.Di.mm(mdl.weight.mm(mdl.x)).softmax(dim=0)
     phat,pop_sortidxs, z,dz, klow,kupp, \
-    df_relctrbs,df_poploptcombs = choose_pops(POP_FILES, n, p)
+    df_relctrbs,df_poploptcombs = choose_pops(POP_FILES, n, p, ismatrix)
 
     ''' PLOTS. ''' 
     web_render_results(PLOT_PATH,n,phat,pop_sortidxs,
@@ -182,7 +217,7 @@ def run_cmd_ssl(cfgs, POP_FILES):
   
   
 # Run!
-klow, kupp, df_relctrbs, df_poploptcombs, PLOT_PATH = run_cmd_ssl(cfgs,POP_FILES)
+klow, kupp, df_relctrbs, df_poploptcombs, PLOT_PATH = run_cmd_ssl(cfgs,POP_FILES, ismatrix)
 
 print('Done!')
 dir_list = os.listdir(PLOT_PATH)
