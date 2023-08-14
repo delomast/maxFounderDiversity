@@ -100,7 +100,6 @@ def trainer(A, mdl, USE_CUDA, MAX_STEPS, ERR_OPT_ACC, LIN_OPTIM_CHOICE, LOSS_LIS
   return p
 
 
-
 ''' PART 2: CHOOSE POPULATIONS. '''
 def choose_pops(POP_FILES, n, p):
   '''
@@ -151,6 +150,7 @@ def choose_pops(POP_FILES, n, p):
   
   
   return phat,pop_sortidxs, z,dz, klow,kupp, df_relctrbs,df_poploptcombs
+
 
 ''' PLOTS. ''' 
 def render_results(n,phat,pop_sortidxs,z,dz,klow,kupp,LOSS_LIST,FC_LOSS_LIST):

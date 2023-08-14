@@ -145,7 +145,7 @@ for epoch in range(MAX_EPOCHS):
 
   #.. learn after full pass over data
   if not STREAM_LEARN or (STREAM_LEARN and epoch>0):
-      p = trainer(A,mdl,
+    p = trainer(A,mdl,
             USE_CUDA, MAX_STEPS, ERR_OPT_ACC, 
             LIN_OPTIM_CHOICE, LOSS_LIST, FC_LOSS_LIST)
   #..

@@ -9,3 +9,4 @@ __pycache__
 aipy/__pycache__
 datapy/__pycache__
 static/session/*
+static/cmdsession/*

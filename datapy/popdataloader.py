@@ -163,6 +163,8 @@ class PopDatasetStreamerLoader():
                         [re.split("\t|:", self.OPEN_POP_SET[pop_id].readline().strip()) for pop_id in range(self.neff)]) # .strip() => remove trailing newline
                     POP_EOF = False
                     
+                    #TODO
+                    
                     # allele frequency matrix for k alleles
                     ppmat_l = torch.from_numpy(np.asfarray(locusline[:,np.arange(self.START_COL,self.TOT_COLS,self.NALLELES)]))
                     
