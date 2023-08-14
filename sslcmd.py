@@ -88,15 +88,6 @@ def run_cmd_ssl(cfgs, POP_FILES):
   PLOT_PATH = (SERVER_ROOT / cfgs["S_PLOT_PATH"] ).resolve()
   os.makedirs(PLOT_PATH, exist_ok=True)
 
-  SCRATCH_FOLDER = "scratch"
-  DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
-  # print(server_root)
-  # print(data_root)
-
-  # search+select .frq files in scratch
-  POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
-
-
   N_EFF = len(POP_FILES)
   USE_CUDA = False
   MAX_BATCHSIZE = int(cfgs["MAX_BATCHSIZE"])
@@ -186,11 +177,14 @@ def run_cmd_ssl(cfgs, POP_FILES):
     web_render_results(PLOT_PATH,n,phat,pop_sortidxs,
                       z,dz,klow,kupp,LOSS_LIST,FC_LOSS_LIST)
     
-  return klow,kupp,df_relctrbs,df_poploptcombs 
+  return klow,kupp,df_relctrbs,df_poploptcombs, PLOT_PATH
   
   
   
 # Run!
-klow, kupp, df_relctrbs, df_poploptcombs = run_cmd_ssl(cfgs,POP_FILES)
-  
-  
+klow, kupp, df_relctrbs, df_poploptcombs, PLOT_PATH = run_cmd_ssl(cfgs,POP_FILES)
+
+print('Done!')
+dir_list = os.listdir(PLOT_PATH)
+print("Saved Decision Plots to\n'",PLOT_PATH,"'\n")
+for dir_file in dir_list: print(dir_file) 

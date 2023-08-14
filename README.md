@@ -45,8 +45,14 @@ Install a python virtual environment (See: <a>https://packaging.python.org/en/la
 
 Install required python packages with the requirements.txt file `pip install -r requirements.txt`
 
+#### Quick Test
+To test the tool. Run: `python ssltest.py` 
+
+
 #### Command Line Interface CLI
-Optional. To test the tool. Run: `python ssltest.py` 
+In your terminal, run sslcmd.py with any of the options below:
+
+``python sslcmd.py [-h] [-b BATCHSIZE] [-s STREAMER] [-l {linear,generic}] (--files FILES [FILES ...] | --source_dir SOURCE_DIR)``
 
 #### Web Frontend
 In your terminal, run: 
