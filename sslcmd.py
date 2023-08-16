@@ -168,7 +168,8 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
         # print(batch[0])  # homozygozity
         # print(batch[1])  # heterozygozity
         # print()
-        A =  (1 - batch[1] + batch[0])/(3)
+        # A =  (1 - batch[1] + batch[0])/(3)
+        A = batch[0]
     
         if STREAM_LEARN:
         # -* learn for each batch stream of data

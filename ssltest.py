@@ -134,7 +134,8 @@ for epoch in range(MAX_EPOCHS):
     # print()
     # test: # A = torch.tensor([[2.5409, -0.0113],[-0.0113, 0.5287]])
     # A = batch[0] # A = (1-(batch[1]))
-    A =  (1 - batch[1] + batch[0])/(3)
+    # A =  (1 - batch[1] + batch[0])/(3)
+    A = batch[0]
     
     if STREAM_LEARN:
       #.. learn for each batch stream of data
