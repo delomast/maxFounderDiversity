@@ -202,7 +202,8 @@ class PopDatasetStreamerLoader():
                     locusline = None
                     POP_EOF = True
                     
-                    raise Exception("Something bad happened. Most likely input files allele information differ.")
+                    if not ((buf_cnt+1)==self.MAX_BUFFER_SIZE) and not(buf_cnt==0):
+                        raise Exception("Something bad happened. Most likely input files allele information differ.")
                     
                     break
                     
