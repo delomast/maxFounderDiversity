@@ -65,11 +65,11 @@ This tells the tool that the allele frequency data files are in a special direct
 
 This passess in a list of allele frequency data file paths, two in this case, to the tool and configures the tool's data loader with a batch-size of 10.
 
-- ``py sslcmd.py --coan_matrix ./scratch/co_mat.txt``
-- ``py sslcmd.py --coan_matrix ./scratch/co_mat.npy``
-- ``py sslcmd.py --coan_matrix ./scratch/co_mat.npz``
+- ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.txt``
+- ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.npy``
+- ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.npz``
 
-These each passess in a file containing a co-ancestry matrix of n populations to the tool.
+These each passess in a file (*that can be loaaded with `numpy`*) containing a co-ancestry matrix of n populations to the tool.
 
 #### Web Frontend
 In a terminal, run: 
