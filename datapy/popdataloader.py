@@ -163,9 +163,22 @@ class PopDatasetStreamerLoader():
                         [re.split("\t|:", self.OPEN_POP_SET[pop_id].readline().strip()) for pop_id in range(self.neff)]) # .strip() => remove trailing newline
                     POP_EOF = False
                     
-                    #TODO
+                    # Check for attribute msimatch in the input population files
+                    if len(set(locusline[:][:,0])) == 1: pass
+                    else:
+                        raise NameError("Looks like the 'CHR' chromosome name at column 1 does not match in all input files!")
                     
-                    # allele frequency matrix for k alleles
+                    if len(set(locusline[:][:,1])) == 1: pass
+                    else:
+                        raise NameError("Looks like the 'POS' chromosome position at column 2 does not match in all input files!")   
+                    
+                    for attr_idx in np.arange(self.START_COL-1,self.TOT_COLS,self.NALLELES):
+                        if len(set(locusline[:][:,attr_idx])) == 1: pass
+                        else:                        
+                            raise NameError(f"Looks like the allele name at column {attr_idx+1} does not match in all input files!")  
+                            
+                    
+                    # Grab the allele frequency matrix for k alleles
                     ppmat_l = torch.from_numpy(np.asfarray(locusline[:,np.arange(self.START_COL,self.TOT_COLS,self.NALLELES)]))
                     
                     # homozygosity and heterozygozity matrix at each locus
@@ -188,6 +201,9 @@ class PopDatasetStreamerLoader():
                 except:
                     locusline = None
                     POP_EOF = True
+                    
+                    raise Exception("Something bad happened. Most likely input files allele information differ.")
+                    
                     break
                     
             freqcnt +=1
