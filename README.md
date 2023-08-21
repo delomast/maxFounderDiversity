@@ -99,8 +99,13 @@ Each line of the $n$ input files should have the same chromosome name and positi
 </div>
 </details>
 
-#### Credits
+#### Acknowledgments
 USDA-ARS AI-COE/SCINet Graduate Research Fellowship/Internship. 2023.
+
+This research was supported in part by an appointment to the Agricultural Research Service (ARS) Research Participation
+Program administered by the Oak Ridge Institute for Science and Education (ORISE) through an interagency agreement between
+the U.S. Department of Energy (DOE) and the U.S. Department of Agriculture (USDA). ORISE is managed by ORAU under DOE
+contract number DE-SC0014664.
 
 
 
