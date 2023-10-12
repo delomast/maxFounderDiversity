@@ -52,7 +52,7 @@ To test the tool. Run: `python ssltest.py`
 #### Command Line Interface CLI
 In a terminal window, we provide the command ``sslcmd`` with options below:
 
-**usage** : ``sslcmd.py [-h] [-b BATCHSIZE] [-s STREAMER] [-l {linear,generic}] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)``
+**usage** : ``sslcmd.py [-h] [-b BATCHSIZE] [-s {True,False}] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)``
 
 
 ##### Examples:
