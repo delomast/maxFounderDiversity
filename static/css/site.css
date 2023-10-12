@@ -27,6 +27,8 @@ legend {
 
 .inner legend {
   font-size: 12px;
+  padding: 0;
+  margin: 0px;
 }
 
 .fillsvg {
@@ -91,7 +93,9 @@ legend {
 }
 
 fieldset.inner {
-  width: 41%;
+  width: 35%;
+  display: flex;
+  padding-bottom: 8px;
 }
 
 div.learner:first-of-type {
@@ -107,7 +111,7 @@ div.learner label {
 }
 
 div.learner input {
-  appearance: none;
+  /* appearance: none; */
   border-radius: 50%;
   width: 16px;
   height: 16px;
@@ -120,6 +124,11 @@ div.learner input {
 
 div.learner input:checked {
   border: 6px solid black;
+}
+
+div.learner, .bsize {
+  padding: 0px 0px;
+  margin: -20px 0px;
 }
 
 div.bsize:first-of-type {

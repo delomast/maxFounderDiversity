@@ -19,7 +19,7 @@
           {% if col == "combs_idx"%}
             <th> Foundation Set,  \( \mathcal{P}_k \) </th>
           {% elif col == "z"%}
-            <th> Relative Genetic Variation,  \( z_k \) </th>
+            <th> Cummulative Value,  \( z_k \) </th>
           {% elif col == "dz"%}
             <th> \( \Delta z_k \) </th>
           {% else %}
@@ -29,7 +29,7 @@
       </tr>
     </thead>
     <tbody>
-      {% set optset = range(klow+1,kupp+2) %}
+      {% set optset = range(klow,kupp+1) %}
       {% for pop_idx, row in zip(poploptcombs_idxs,optcombs_rowdata) %}
         {% set k =  pop_idx+1 %}
         {% if k in optset %}

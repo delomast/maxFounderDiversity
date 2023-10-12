@@ -191,8 +191,6 @@ class aSGM():
             lck, ak= self.lpf.torch_ew_compute(in_k=lcavgk, x=ak, beta=beta_num_k, step=step, mode=2)    
             # projection.
             alpha_hat = (lck.abs_()) 
-            # alpha_hat = (lck.abs_().mean()) 
-            # alpha_hat = (lck.max().mean_()) 
         else:
             # use externally supplied linear correlation estimate 
             alpha_hat = self.lr_inits
@@ -456,7 +454,7 @@ class AutoSGM(Optimizer):
                 state_steps
             )
 
-        return loss, state['step']
+        return state['step'].item(), 1*lrk[0], 1*beta_in_k[0]
 
 
 '''
