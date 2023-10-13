@@ -28,17 +28,18 @@ def dir_path(path):
         raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
 
 
-
+def str2bool(s):
+    if s not in {'False', 'True'}:
+        raise ValueError("Input should be False or True")
+    return s == 'True'
+  
 parser = argparse.ArgumentParser(description="SSL CLI Tool!")
 
 parser.add_argument("-b", "--batchsize", help='batch-size (int)', 
                     type=int, default=1)
-# parser.add_argument("-s", "--streamer", help='streaming data?', 
-#                     type=bool, default=False)
-parser.add_argument("-s", "--scaler", help='normalize data', 
-                    type=bool, choices=[True, False], default=True)
-# parser.add_argument("-l", "--learner", help='set learning algorithm', 
-#                     type=str, choices=["quad","generic"],default="quad")
+
+parser.add_argument("-s", "--scaler", help='normalize data (bool)', 
+                    type=str2bool, default=True)
 
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--files", 
@@ -110,10 +111,6 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
     N_EFF = POP_FILES.shape[0]
   USE_CUDA = False
   USE_CORR = cfgs["USE_CORR"]
-  if USE_CORR == "True":
-    USE_CORR = True
-  else:
-    USE_CORR = False
   MAX_BATCHSIZE = int(cfgs["MAX_BATCHSIZE"])
   MAX_EPOCHS = 1
   ERR_OPT_ACC = 1E-15 # 1E-5, 1E-8, 1E-10
