@@ -20,13 +20,13 @@ from datapy.popdataloader import PopDatasetStreamerLoader
 # GLOBAL configs
 # print(Path.cwd())
 SERVER_ROOT = Path(__file__).parents[0]
-# SCRATCH_FOLDER = "scratch"
-SCRATCH_FOLDER = "sthd_af"
+# SCRATCH_FOLDER = "alle_frq_dirs/test_af"
+SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
 DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 # print(server_root)
 # print(data_root)
 
-# search+select .frq files in scratch
+# search+select .frq files in alle_frq_dirs/test_af
 POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
 
 N_EFF = len(POP_FILES)

@@ -271,12 +271,12 @@ class PopDatasetStreamerLoader():
 
 # # print(Path.cwd())
 # SERVER_ROOT = Path(__file__).parent 
-# SCRATCH_FOLDER = "scratch"
+# SCRATCH_FOLDER = "alle_frq_dirs/test_af"
 # DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 # # print(server_root)
 # # print(data_root)
 
-# # search+select .frq files in scratch
+# # search+select .frq files in alle_frq_dirs/test_af
 # POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
 
 # data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=0,max_batch_size=100, avgmode=3)
@@ -315,12 +315,12 @@ if __name__ == "__main__":
     
     # print(Path.cwd())
     SERVER_ROOT = Path(__file__).parents[1] 
-    SCRATCH_FOLDER = "scratch"
+    SCRATCH_FOLDER = "alle_frq_dirs/test_af"
     DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
     # print(server_root)
     # print(data_root)
 
-    # search+select .frq files in scratch
+    # search+select .frq files in alle_frq_dirs/test_af
     POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
 
     data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,max_batch_size=100, avgmode=3)

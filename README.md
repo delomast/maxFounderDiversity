@@ -52,20 +52,20 @@ To test the tool. Run: `python ssltest.py`
 #### Command Line Interface CLI
 In a terminal window, we provide the command ``sslcmd`` with options below:
 
-**usage** : ``sslcmd.py [-h] [-b BATCHSIZE] [-s {True,False}] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)``
+**usage** : ``sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)``
 
 
 #### CLI Examples:
 
 ##### Example 1
-- ``py sslcmd.py --source_dir ./scratch -b 10``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/test_af -b 10``
 
-This tells the tool that the allele frequency data files are in a source directory located at './scratch' and configures the tool's data loader with a batch-size of 10.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/test_af' and configures the tool's data loader with a batch-size of 10.
 
 ##### Example 2
-- ``py sslcmd.py --source_dir ./sthd_af -b 1024``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af -b 1024``
 
-This tells the tool that the allele frequency data files are in a source directory located at './sthd_af' and configures the tool's data loader with a batch-size of 1024.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and configures the tool's data loader with a batch-size of 1024.
 
 ##### Example 3
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.txt``

@@ -65,7 +65,7 @@ cfgs["USE_CORR"] = args.scaler
 print(args)
 
 # SERVER_ROOT = Path(__file__).parents[0]
-# DATA_PATH = (SERVER_ROOT / f"static/cmdsession/{secret_key}/scratch" ).resolve()
+# DATA_PATH = (SERVER_ROOT / f"static/cmdsession/{secret_key}/alle_frq_dirs/test_af" ).resolve()
 # os.makedirs(DATA_PATH, exist_ok=True)
 # cfgs["DATA_PATH"] = str(DATA_PATH)
 

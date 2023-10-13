@@ -39,7 +39,7 @@ plt.rcParams['figure.dpi'] = 300
 # GLOBAL configs
 # print(Path.cwd())
 SERVER_ROOT = Path(__file__).parents[0]
-SCRATCH_FOLDER = "scratch"
+SCRATCH_FOLDER = "alle_frq_dirs/test_af"
 DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 # print(server_root)
 # print(data_root)
