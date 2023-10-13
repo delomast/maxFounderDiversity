@@ -55,16 +55,19 @@ In a terminal window, we provide the command ``sslcmd`` with options below:
 **usage** : ``sslcmd.py [-h] [-b BATCHSIZE] [-s {True,False}] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)``
 
 
-##### Examples:
+#### CLI Examples:
 
-- ``py sslcmd.py --source_dir ./scratch -b 100``
+##### Example 1
+- ``py sslcmd.py --source_dir ./scratch -b 10``
 
-This tells the tool that the allele frequency data files are in a special directory located at './scratch' and configures the tool's data loader with a batch-size of 100.
+This tells the tool that the allele frequency data files are in a source directory located at './scratch' and configures the tool's data loader with a batch-size of 10.
 
-<!-- - ``py sslcmd.py --files .\scratch\subset_CH_NC_035781.1.vcf.gz.frq .\scratch\subset_CLP_NC_035781.1.vcf.gz.frq -b 10``
+##### Example 2
+- ``py sslcmd.py --source_dir ./sthd_af -b 1024``
 
-This passess in a list of allele frequency data file paths, two in this case, to the tool and configures the tool's data loader with a batch-size of 10. -->
+This tells the tool that the allele frequency data files are in a source directory located at './sthd_af' and configures the tool's data loader with a batch-size of 1024.
 
+##### Example 3
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.txt``
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.npy``
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.npz``

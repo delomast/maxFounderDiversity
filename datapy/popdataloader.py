@@ -84,7 +84,8 @@ class PopDatasetStreamerLoader():
         self.POP_SET = tuple(POP_FILES[0:neff]) 
             
         self.Ho_mat = torch.zeros((neff,neff),dtype=torch.float32)    
-        self.He_mat = torch.zeros((neff,neff),dtype=torch.float32)
+        self.He_mat = 0
+        # self.He_mat = torch.zeros((neff,neff),dtype=torch.float32)
 
         self.OPEN_POP_SET = []
         # open pop_files for reading and append to list    
@@ -144,7 +145,7 @@ class PopDatasetStreamerLoader():
         POP_EOF = False
         while freqcnt < 1 and not POP_EOF:
             Ho_buffer = []
-            He_buffer = [] 
+            # He_buffer = [] 
             # track number of lines read into current batch/buffer
             buf_cnt = 0 
             # tot. number of lines read so far.
@@ -183,27 +184,32 @@ class PopDatasetStreamerLoader():
                     
                     # homozygosity and heterozygozity matrix at each locus
                     Ho_Smat_l = ppmat_l.mm(ppmat_l.T)
-                    He_Smat_l = 0.5*(1-Ho_Smat_l)
+                    # He_Smat_l = 0.5*(1-Ho_Smat_l)
                     
                     self.line_cnt += 1    
                     _, self.Ho_mat, _ = self.stable_avgfcn.torch_ew_compute(
                         in_t=Ho_Smat_l, x=self.Ho_mat, beta=self.BETA, 
                         step=self.line_cnt, mode=self.avgmode
                     )
-                    _, self.He_mat, _ = self.stable_avgfcn.torch_ew_compute(
-                        in_t=He_Smat_l, x=self.He_mat, beta=self.BETA, 
-                        step=self.line_cnt, mode=self.avgmode
-                    )
+                    # _, self.He_mat, _ = self.stable_avgfcn.torch_ew_compute(
+                    #     in_t=He_Smat_l, x=self.He_mat, beta=self.BETA, 
+                    #     step=self.line_cnt, mode=self.avgmode
+                    # )
                             
                     # Ho_buffer.append(Ho_Smat_l.clone())  
                     # He_buffer.append(He_Smat_l.clone()) 
                     buf_cnt += 1
                 except:
-                    locusline = None
-                    POP_EOF = True
                     
-                    if not ((buf_cnt+1)==self.MAX_BUFFER_SIZE) and not(buf_cnt==0):
-                        raise Exception("Something bad happened. Most likely input files allele information differ.")
+                    if ((buf_cnt+1)<=self.MAX_BUFFER_SIZE) and (len(set(locusline.flatten())) == 1) and locusline[:][0][0] == '':
+                        # we hit an empty line just before EOF.
+                        locusline = None
+                        POP_EOF = True
+                    else:
+                        # locusline = None
+                        # POP_EOF = True                        
+                        if not ((buf_cnt+1)==self.MAX_BUFFER_SIZE) and not(buf_cnt==0):
+                            raise Exception("Something bad happened. Most likely input files allele information differ.")
                     
                     break
                     
@@ -249,8 +255,8 @@ class PopDatasetStreamerLoader():
             self.ptr = self.ptr + self.MAX_BATCH_SIZE
             return SYS_MAT
         elif self.response < 0:      
-        # reached EOF,
-        # prepare for next epoch
+            # reached EOF,
+            # prepare for next epoch
             raise StopIteration
 
     def __len__(self):

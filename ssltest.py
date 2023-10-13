@@ -20,7 +20,8 @@ from datapy.popdataloader import PopDatasetStreamerLoader
 # GLOBAL configs
 # print(Path.cwd())
 SERVER_ROOT = Path(__file__).parents[0]
-SCRATCH_FOLDER = "scratch"
+# SCRATCH_FOLDER = "scratch"
+SCRATCH_FOLDER = "sthd_af"
 DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 # print(server_root)
 # print(data_root)
@@ -29,9 +30,9 @@ DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
 
 N_EFF = len(POP_FILES)
-# N_EFF = 2
+# N_EFF = 5
 USE_CUDA = False
-MAX_BATCHSIZE = 100
+MAX_BATCHSIZE = 512
 MAX_EPOCHS = 1
 ERR_OPT_ACC = 1E-15 
 QUAD_OBJ_CHOICE = True # 1: ~LIN | 0: GEN 
@@ -252,8 +253,13 @@ for epoch in range(MAX_EPOCHS):
   # cmap = mpl.colormaps[cmapstr]
   # cmap = mpl.colormaps[cmapstr].reversed() #.resampled(50)
   
+  wx_ratio = n/2
+  
+  svpath = (SERVER_ROOT/f"static/trainplts/{SCRATCH_FOLDER}").resolve()._str
+  os.makedirs(svpath, exist_ok = True)
+  
   plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
+  figsz = (0.13*wx_ratio, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
   gs = gridspec.GridSpec(1,1)
   ax = [plt.subplot(gsi) for gsi in gs]
@@ -268,13 +274,13 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
   plt.tight_layout(pad=0.25)
 
-  figpath = str((SERVER_ROOT / f"static/trainplts/relctrbs_sslplot.png").resolve())
-  plt.savefig(figpath, dpi=1200)
+  figpath = f"{svpath}/relctrbs_sslplot.png"
+  plt.savefig(figpath, bbox_inches='tight', dpi=1200)
   plt.close(fig)
   
   # grouping
   plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.9, 0.7)
+  figsz = (0.16*wx_ratio, 0.7)
   fig = plt.figure(figsize=figsz,tight_layout=True)
   gs = gridspec.GridSpec(1,1)
   ax = [plt.subplot(gsi) for gsi in gs]
@@ -296,8 +302,8 @@ for epoch in range(MAX_EPOCHS):
   ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=3, fancybox=False, edgecolor='black', frameon=False)
   plt.tight_layout(pad=0.25)
 
-  figpath = str((SERVER_ROOT / f"static/trainplts/popchoice_sslplot.png").resolve())
-  plt.savefig(figpath, dpi=1200)
+  figpath = f"{svpath}/popchoice_sslplot.png"
+  plt.savefig(figpath,  bbox_inches='tight', dpi=1200)
   # plt.show()
   plt.close(fig)
 
@@ -325,7 +331,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=2, fancybox=False, edgecolor='black', frameon=False)
   
   plt.tight_layout(pad=0.5)
-  figpath = str((SERVER_ROOT / f"static/trainplts/cost_plot.png").resolve())
+  figpath = f"{svpath}/cost_plot.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   # plt.show()
@@ -350,7 +356,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = str((SERVER_ROOT / f"static/trainplts/ctrbrel_curve.png").resolve())
+  figpath = f"{svpath}/ctrbrel_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -374,7 +380,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = str((SERVER_ROOT / f"static/trainplts/lin_y_curve.png").resolve())
+  figpath = f"{svpath}/lin_y_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -399,7 +405,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = str((SERVER_ROOT / f"static/trainplts/lrt_curve.png").resolve())
+  figpath = f"{svpath}/lrt_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -422,7 +428,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = str((SERVER_ROOT / f"static/trainplts/betai_t_curve.png").resolve())
+  figpath = f"{svpath}/betai_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -446,7 +452,7 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = str((SERVER_ROOT / f"static/trainplts/gradw_t_curve.png").resolve())
+  figpath = f"{svpath}/gradw_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -470,6 +476,6 @@ for epoch in range(MAX_EPOCHS):
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = str((SERVER_ROOT / f"static/trainplts/w_t_curve.png").resolve())
+  figpath = f"{svpath}/w_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)

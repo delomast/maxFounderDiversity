@@ -32,10 +32,14 @@ import secrets
   
 
 app = Flask(__name__)
-app.debug = True
+# app.debug = True
+# app.config['ENV'] = 'development'
+# app.config['DEBUG'] = True
+# app.config['TESTING'] = True
+# print(app.config)
 
-from werkzeug.middleware.proxy_fix import ProxyFix
-app.wsgi_app = ProxyFix(app.wsgi_app,x_host=1,x_prefix=1)
+# from werkzeug.middleware.proxy_fix import ProxyFix
+# app.wsgi_app = ProxyFix(app.wsgi_app,x_host=1,x_prefix=1)
 
 app.secret_key = secrets.token_hex()
 

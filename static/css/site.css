@@ -294,7 +294,7 @@ td, th {
 
 .trplt {
   mix-blend-mode: multiply;
-  width:80%
+  width: auto;
 }
 tr.optset {
   background-color: rgb(198, 234, 198) !important;
