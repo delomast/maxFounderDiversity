@@ -81,14 +81,14 @@ options:
 #### CLI Examples:
 
 ##### Example 1
-- ``py sslcmd.py --source_dir ./alle_frq_dirs/test_af -b 10``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/test_af -b 1024``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/test_af' and configures the tool's data loader with a batch-size of 10.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/test_af' and configures the tool's data loader with a batch-size of 1024.
 
 ##### Example 2
-- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af -b 1024``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af -b 1``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and configures the tool's data loader with a batch-size of 1024.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and configures the tool's data loader with a batch-size of 1.
 
 ##### Example 3
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.txt``
