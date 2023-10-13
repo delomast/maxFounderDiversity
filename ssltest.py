@@ -255,8 +255,8 @@ for epoch in range(MAX_EPOCHS):
   
   wx_ratio = n/2
   
-  svpath = (SERVER_ROOT/f"static/trainplts/{SCRATCH_FOLDER}").resolve()._str
-  print(svpath)
+  svpath = str(SERVER_ROOT/f"static/trainplts/{SCRATCH_FOLDER}")
+  print('Saved plots:',svpath)
   os.makedirs(svpath, exist_ok = True)
   
   plt.rcParams['axes.linewidth'] = 0.35

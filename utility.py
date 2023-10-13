@@ -202,6 +202,9 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   # cmap = mpl.colormaps[cmapstr].reversed() #.resampled(50)
   
   wx_ratio = n/2
+  svpath = str(SERVER_ROOT/f"static/trainplts/{SCRATCH_FOLDER}")
+  print('Saved plots:',svpath)
+  os.makedirs(svpath, exist_ok = True)
   
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.13*wx_ratio, 0.4)
@@ -219,7 +222,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
   plt.tight_layout(pad=0.25)
 
-  figpath = (SERVER_ROOT / f"static/trainplts/relctrbs_sslplot.png").resolve()._str
+  figpath = f"{svpath}/relctrbs_sslplot.png"
   plt.savefig(figpath, bbox_inches='tight', dpi=1200)
   plt.close(fig)
   
@@ -247,7 +250,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=3, fancybox=False, edgecolor='black', frameon=False)
   plt.tight_layout(pad=0.25)
 
-  figpath = (SERVER_ROOT / f"static/trainplts/popchoice_sslplot.png").resolve()._str
+  figpath = f"{svpath}/popchoice_sslplot.png"
   plt.savefig(figpath,  bbox_inches='tight', dpi=1200)
   # plt.show()
   plt.close(fig)
@@ -276,7 +279,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=2, fancybox=False, edgecolor='black', frameon=False)
   
   plt.tight_layout(pad=0.5)
-  figpath = (SERVER_ROOT / f"static/trainplts/cost_plot.png").resolve()._str
+  figpath = f"{svpath}/cost_plot.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   # plt.show()
@@ -301,7 +304,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = (SERVER_ROOT / f"static/trainplts/ctrbrel_curve.png").resolve()._str
+  figpath = f"{svpath}/ctrbrel_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -325,7 +328,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = (SERVER_ROOT / f"static/trainplts/lin_y_curve.png").resolve()._str
+  figpath = f"{svpath}/lin_y_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -350,7 +353,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = (SERVER_ROOT / f"static/trainplts/lrt_curve.png").resolve()._str
+  figpath = f"{svpath}/lrt_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -373,7 +376,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = (SERVER_ROOT / f"static/trainplts/betai_t_curve.png").resolve()._str
+  figpath = f"{svpath}/betai_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -397,7 +400,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = (SERVER_ROOT / f"static/trainplts/gradw_t_curve.png").resolve()._str
+  figpath = f"{svpath}/gradw_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
@@ -421,7 +424,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   ax[0].margins(y=0.05, tight=True)
 
   plt.tight_layout(pad=0.25)
-  figpath = (SERVER_ROOT / f"static/trainplts/w_t_curve.png").resolve()._str
+  figpath = f"{svpath}/w_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
   
