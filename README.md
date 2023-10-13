@@ -2,8 +2,7 @@
 ## Self-supervised Learning of Optimum Contributions: An Application in Maximizing Genetic Variation
 ![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/ci.yml/badge.svg?event=push)
 
-<!-- ![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](/static/trainplts/sthd_af/relctrbs_sslplot.png) -->
-<!-- <img src="static/trainplts/sthd_af/relctrbs_sslplot.png" alt="chart" style="    mix-blend-mode: luminosity; background=black;"> -->
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="static/trainplts/sthd_af/relctrbs_sslplot.png">
   <source media="(prefers-color-scheme: light)" srcset="static/trainplts/sthd_af/relctrbs_sslplot.png">
@@ -11,7 +10,7 @@
 </picture>
 
 
-Algorithm to choose which populations to sample broodstock from and in what proportions to maximize genetic diversity (expected heterozygosity) in the offspring population, given a set of populations that could be sampled from (with known allele frequencies at a common set of loci).
+Algorithm to choose which populations to sample broodstock from and in what proportions $`c^\star`$ to maximize genetic diversity (expected heterozygosity) in the offspring population, given a set of populations that could be sampled from (with known allele frequencies at a common set of loci).
 
 Developed with the application of creating base populations for aquaculture breeding programs in mind.
 
