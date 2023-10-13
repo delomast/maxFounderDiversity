@@ -10,7 +10,7 @@
 </picture>
 
 
-Algorithm to choose which populations to sample broodstock from and in what proportions $`c^\star`$ to maximize genetic diversity (expected heterozygosity) in the offspring population, given a set of populations that could be sampled from (with known allele frequencies at a common set of loci).
+Algorithm to choose which populations to sample broodstock from and in what proportions $`\mathbf{c}^\star`$ to maximize genetic diversity (expected heterozygosity) in the offspring population, given a set of populations that could be sampled from (with known allele frequencies at a common set of loci).
 
 Developed with the application of creating base populations for aquaculture breeding programs in mind.
 
