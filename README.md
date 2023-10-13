@@ -50,11 +50,34 @@ To test the tool. Run: `python ssltest.py`
 
 
 #### Command Line Interface CLI
-In a terminal window, we provide the command ``sslcmd`` with options below:
+In a terminal window, we provide the command ``sslcmd``. 
 
-**usage** : ``sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)``
+Entering ``py sslcmd.py --help`` in the command window returns:
 
+```
+usage: sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)
 
+SSL CLI Tool!
+
+options:
+
+  -h, --help            show this help message and exit
+
+  -b BATCHSIZE, --batchsize BATCHSIZE
+                        batch-size (int)
+
+  -s SCALER, --scaler SCALER
+                        normalize data (bool)
+
+  --files FILES [FILES ...]
+                        list of source files
+
+  --source_dir SOURCE_DIR
+                        directory path to source files (on disk)
+
+  --coan_matrix COAN_MATRIX
+                        conacestry matrix path (on disk)
+```
 #### CLI Examples:
 
 ##### Example 1
