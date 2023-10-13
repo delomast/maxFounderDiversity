@@ -60,10 +60,10 @@ def setup():
   print(inpfiles)
   
   SERVER_ROOT = Path(__file__).parents[0]
-  DATA_PATH = (SERVER_ROOT / f"static/session/{app.secret_key}/alle_frq_dirs/test_af" ).resolve()
+  DATA_PATH = str((SERVER_ROOT / f"static/session/{app.secret_key}/alle_frq_dirs/test_af" ).resolve())
   os.makedirs(DATA_PATH, exist_ok=True)
   # print(DATA_PATH)
-  session["DATA_PATH"] = str(DATA_PATH)
+  session["DATA_PATH"] = DATA_PATH
   session["S_PLOT_PATH"] = f"static/session/{app.secret_key}/trainplts"
   
   for file in inpfiles:
