@@ -7,7 +7,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="static/trainplts/sthd_af/relctrbs_sslplot.png">
   <source media="(prefers-color-scheme: light)" srcset="static/trainplts/sthd_af/relctrbs_sslplot.png">
-  <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/sthd_af/relctrbs_sslplot.png">
+  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/sthd_af/relctrbs_sslplot.png">
 </picture>
 
 
