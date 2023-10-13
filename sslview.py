@@ -29,7 +29,8 @@ import secrets
 
 
 # GLOBAL configs
-  
+
+# run: flask --app sslview --debug run   
 
 app = Flask(__name__)
 # app.debug = True
@@ -38,8 +39,8 @@ app = Flask(__name__)
 # app.config['TESTING'] = True
 # print(app.config)
 
-# from werkzeug.middleware.proxy_fix import ProxyFix
-# app.wsgi_app = ProxyFix(app.wsgi_app,x_host=1,x_prefix=1)
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app,x_host=1,x_prefix=1)
 
 app.secret_key = secrets.token_hex()
 
