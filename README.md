@@ -2,11 +2,10 @@
 ## Self-supervised Learning of Optimum Contributions: An Application in Maximizing Genetic Variation
 ![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/ci.yml/badge.svg?event=push)
 
-
 <picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/sthd_af/relctrbs_sslplot.png">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/sthd_af/relctrbs_sslplot.png">
-  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/sthd_af/relctrbs_sslplot.png">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
+  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
 </picture>
 
 
