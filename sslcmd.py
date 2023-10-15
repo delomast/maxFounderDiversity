@@ -74,7 +74,7 @@ ismatrix = False # logic to know if a pre-computed co-ancestry matrix is used.
 ext = str(args.coan_matrix).split('.')
 
 if args.coan_matrix:
-  if ext[-1] in ['txt', 'csv']:
+  if ext[-1] in ['txt', 'csv', 'rel']:
     POP_FILES = np.loadtxt(args.coan_matrix)
   if ext[-1] == 'npy':
     POP_FILES = np.load(args.coan_matrix)
@@ -114,6 +114,7 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
   MAX_BATCHSIZE = int(cfgs["MAX_BATCHSIZE"])
   MAX_EPOCHS = 1
   ERR_OPT_ACC = 1E-15 # 1E-5, 1E-8, 1E-10
+  EPS = 1E-15
   QUAD_OBJ_CHOICE = True
   MAX_STEPS = (N_EFF**2)
 
@@ -125,21 +126,27 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
     n = POP_FILES.shape[0]
 
   # instantiate self-supervised model
-  mdl = QSSLNet(in_dim=n,out_dim=n)
+  mdl = QSSLNet(in_dim=n,out_dim=n, eps=EPS)
   if USE_CUDA: 
     mdl = mdl.cuda()
   mdl.set_learner(
-      AutoSGMQuad(mdl.Lin_W.parameters(), eps=ERR_OPT_ACC, usecuda=USE_CUDA) 
+      AutoSGMQuad(mdl.Lin_W.parameters(), eps=EPS, usecuda=USE_CUDA) 
       )
 
   b_idx = 0
   for epoch in range(MAX_EPOCHS):
     ''' EPOCH BEGIN: A single pass through the data'''
-    LOSS_LIST, FC_LOSS_LIST = [],[]
-    W_T, G_T = [],[]
-    C_T, Y_T, LR_T, BT_T = [],[],[],[]
+    SVLISTS = dict()
+    SVLISTS['cost'] = []
+    SVLISTS['dfcost'] = []
+    SVLISTS['wt'] = []
+    SVLISTS['gt'] = []
+    SVLISTS['ct'] = []
+    SVLISTS['yt'] = []
+    SVLISTS['sst'] = []
+    SVLISTS['btt'] = []
     
-    W_T.append(1*mdl.weight_W.detach().numpy(force=True).flatten())
+    SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
     print("Epoch: " + str(epoch+1)) 
     walltime = time.time()
     ''' PART 1: LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
@@ -152,18 +159,15 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
       #.. learn after full pass over data
       loss, c_t, y, alphas, betas = trainmdl(mdl, A,
               USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
-              QUAD_OBJ_CHOICE, LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-              C_T, Y_T, LR_T, BT_T)  
+              QUAD_OBJ_CHOICE, SVLISTS)  
       
     else:
       b_idx = 0
-      A = torch.tensor(POP_FILES,dtype=torch.float)
-      if USE_CUDA: A = A.cuda()
+      A = torch.tensor(POP_FILES, dtype=torch.float)
       #.. learn after full pass over data
       loss, c_t, y, alphas, betas = trainmdl(mdl, A,
               USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
-              QUAD_OBJ_CHOICE, LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-              C_T, Y_T, LR_T, BT_T)  
+              QUAD_OBJ_CHOICE, SVLISTS)  
       
 
     ''' EPOCH END.'''
@@ -179,8 +183,7 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
 
     ''' PLOTS. ''' 
     web_render_results(PLOT_PATH, n, results,
-            LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-            C_T, Y_T, LR_T, BT_T)
+            SVLISTS)
     
   return PLOT_PATH
   

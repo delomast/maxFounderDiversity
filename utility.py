@@ -47,8 +47,7 @@ DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 
 ''' PART 1: LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
 def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS, 
-            ERR_OPT_ACC, QUAD_OBJ_CHOICE, LOSS_LIST, FC_LOSS_LIST,
-            W_T,G_T,C_T, Y_T, LR_T,BT_T):
+            ERR_OPT_ACC, QUAD_OBJ_CHOICE, SVLISTS):
   
   # accept data matrix
   if USE_CUDA: 
@@ -78,14 +77,14 @@ def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS,
         
     print(f"Step: {int(step)}")
     # 3. stopping criterion.
-    W_T.append(1*mdl.weight_W.detach().numpy(force=True).flatten())
-    LOSS_LIST.append(costW.item())
-    FC_LOSS_LIST.append(delta_costW.item())
-    G_T.append(1*mdl.weight_W.grad.detach().numpy(force=True).flatten())
-    C_T.append(1*c_t.detach().numpy(force=True).flatten())
-    Y_T.append(1*y.detach().numpy(force=True).flatten())
-    LR_T.append(1*lrks.numpy(force=True).flatten())
-    BT_T.append(1*betain_ks.numpy(force=True).flatten())
+    SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
+    SVLISTS['cost'].append(costW.item())
+    SVLISTS['dfcost'].append(delta_costW.item())
+    SVLISTS['gt'].append(1*mdl.weight_W.grad.detach().numpy(force=True).flatten())
+    SVLISTS['ct'].append(1*c_t.detach().numpy(force=True).flatten())
+    SVLISTS['yt'].append(1*y.detach().numpy(force=True).flatten())
+    SVLISTS['sst'].append(1*lrks.numpy(force=True).flatten())
+    SVLISTS['btt'].append(1*betain_ks.numpy(force=True).flatten())
     print(f"fractional loss change: {delta_costW}")  
       
     if k_id > 1 and (delta_costW < ERR_OPT_ACC): break
@@ -158,8 +157,7 @@ def get_optimal_sets(POP_FILES, n, c_t, ismatrix= False):
 
 
 ''' PLOTS. ''' 
-def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-            C_T, Y_T, LR_T, BT_T):
+def render_results(n,result,SVLISTS):
   
   '''
   Plots results of this Learning process.
@@ -257,9 +255,9 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
 
   # COST
   # plt.rcParams.update(plt.rcParamsDefault)
-  x = np.arange(1, len(LOSS_LIST)+1)
-  lloss = np.array(LOSS_LIST)
-  lfcloss = np.array(FC_LOSS_LIST)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  lloss = np.array(SVLISTS['cost'])
+  lfcloss = np.array(SVLISTS['dfcost'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.5)
   fig = plt.figure(figsize=figsz,tight_layout=True, dpi=1200)
@@ -286,8 +284,8 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   
   
   # P_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(C_T)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['ct'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -309,9 +307,9 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # Y_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(Y_T)
+  # SVLISTS['yt'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['yt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -333,9 +331,9 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # LR_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(LR_T)
+  # SVLISTS['sst'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['sst'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -358,8 +356,8 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   # BTi_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(BT_T)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['btt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -381,9 +379,9 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # G_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(G_T)
+  # SVLISTS['gt'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['gt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -405,9 +403,9 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # W_T 
-  x = np.arange(0, len(LOSS_LIST)+1)
-  y = np.array(W_T)
+  # SVLISTS['wt'] 
+  x = np.arange(0, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['wt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -430,8 +428,7 @@ def render_results(n,result,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   
 
 ''' PLOTS. ''' 
-def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-            C_T, Y_T, LR_T, BT_T):
+def web_render_results(PLOT_PATH,n,results,SVLISTS):
   
   phat = results['c_star']
   pop_sortidxs = results['pop_sort_idxs']
@@ -533,9 +530,9 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
 
   # COST
   # plt.rcParams.update(plt.rcParamsDefault)
-  x = np.arange(1, len(LOSS_LIST)+1)
-  lloss = np.array(LOSS_LIST)
-  lfcloss = np.array(FC_LOSS_LIST)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  lloss = np.array(SVLISTS['cost'])
+  lfcloss = np.array(SVLISTS['dfcost'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.5)
   fig = plt.figure(figsize=figsz,tight_layout=True, dpi=1200)
@@ -562,8 +559,8 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   
   
   # P_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(C_T)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['ct'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -585,9 +582,9 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # Y_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(Y_T)
+  # SVLISTS['yt'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['yt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -609,9 +606,9 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # LR_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(LR_T)
+  # SVLISTS['sst'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['sst'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -634,8 +631,8 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   # BTi_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(BT_T)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['btt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -657,9 +654,9 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # G_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(G_T)
+  # SVLISTS['gt'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['gt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -681,9 +678,9 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   plt.close(fig)
   
   
-  # W_T 
-  x = np.arange(0, len(LOSS_LIST)+1)
-  y = np.array(W_T)
+  # SVLISTS['wt'] 
+  x = np.arange(0, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['wt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -703,6 +700,33 @@ def web_render_results(PLOT_PATH,n,results,LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
   figpath = f"{PLOT_PATH}/w_t_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
+  
+  
+  # norm
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y1 = np.array([ np.linalg.norm(cvt - SVLISTS['ct'][-1]) for cvt in SVLISTS['ct'] ])
+  y2 = np.array([ np.linalg.norm(cvt - SVLISTS['ct'][-1], float(np.inf)) for cvt in SVLISTS['ct'] ])
+  plt.rcParams['axes.linewidth'] = 0.35
+  figsz = (0.7, 0.4)
+  fig = plt.figure(figsize=figsz,tight_layout=True)
+  gs = gridspec.GridSpec(1,1)
+  ax = [plt.subplot(gsi) for gsi in gs]
+  ax[0].plot(x,y1,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_2$")
+  ax[0].plot(x,y2,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_1$")
+  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
+  ax[0].set_ylabel(r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert$", fontsize=2, labelpad=1.5)
+  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
+  csts = {'LW':0.25}
+  #
+  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
+  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
+  ax[0].margins(y=0.05, tight=True)
+  ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=1.5, fancybox=False, edgecolor='black', frameon=False)
+  
+  plt.tight_layout(pad=0.25)
+  figpath = f"{PLOT_PATH}/normctrbrel_curve.png"
+  plt.savefig(figpath, dpi=1200)
+  plt.close(fig)  
 
 
 

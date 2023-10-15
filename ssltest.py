@@ -14,59 +14,8 @@ from aipy.asgm_quad import AutoSGMQuad
 from aipy.asgm import AutoSGM as AutoSGMGen
 from datapy.popdataloader import PopDatasetStreamerLoader
 
-
-
-
-# GLOBAL configs
-# print(Path.cwd())
-SERVER_ROOT = Path(__file__).parents[0]
-# SCRATCH_FOLDER = "alle_frq_dirs/test_af"
-SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
-DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
-# print(server_root)
-# print(data_root)
-
-# search+select .frq files in alle_frq_dirs/test_af
-POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
-
-N_EFF = len(POP_FILES)
-# N_EFF = 5
-USE_CUDA = False
-MAX_BATCHSIZE = 512
-MAX_EPOCHS = 1
-ERR_OPT_ACC = 1E-15 
-QUAD_OBJ_CHOICE = True # 1: ~LIN | 0: GEN 
-USE_CORR = True
-
-if QUAD_OBJ_CHOICE:
-  MAX_STEPS = (N_EFF**2)
-else: MAX_STEPS = 2500
-
-# buffer_size: data size < actual data size to load into mem. 
-# batch_size: selected data size per batch <= buffer_size
-# onesample_size: size of one data-point >= 1, < buffer_size
-data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
-
-n = data_ldr.neff
-# instantiate self-supervised model
-mdl = QSSLNet(in_dim=n,out_dim=n, eps=ERR_OPT_ACC)
-if USE_CUDA: 
-  mdl = mdl.cuda() 
-
-if QUAD_OBJ_CHOICE:
-  mdl.set_learner(
-    AutoSGMQuad(mdl.Lin_W.parameters(), eps=ERR_OPT_ACC, usecuda=USE_CUDA) 
-    )
-else: 
-  # create plots for -2,-3,-4,-5,-6,-7,-8 comparing step-size for iteration dep and constant with respect to performance (c_t converging/y_t converging/loss).
-  mdl.set_learner(
-      AutoSGMGen(mdl.Lin_W.parameters(),auto=True, lr_init=1e-2, beta_in_smooth=0.9, beta_den=0.99, beta_num=0.99, usecuda=USE_CUDA),
-      )
-
-
 def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS, 
-            ERR_OPT_ACC, QUAD_OBJ_CHOICE, LOSS_LIST, FC_LOSS_LIST,
-            W_T,G_T,C_T, Y_T, LR_T,BT_T):
+            ERR_OPT_ACC, QUAD_OBJ_CHOICE, SVLISTS):
   
   # accept data matrix
   if USE_CUDA: 
@@ -85,6 +34,9 @@ def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS,
     costW = mdl.quadcost(y)
     delta_costW = mdl.delta_cost(costW.item())
     
+    nc_t = torch.linalg.norm(mdl.x.detach()).item()
+    nc_t_a = torch.linalg.norm(mdl.x.detach(),float(torch.inf)).item()
+    
     # backward pass: 
     # zero and backpropagate: compute current gradient
     mdl.learnerW.zero_grad(set_to_none=True)
@@ -99,14 +51,14 @@ def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS,
         
     print(f"Step: {int(step)}")
     # 3. stopping criterion.
-    W_T.append(1*mdl.weight_W.detach().numpy(force=True).flatten())
-    LOSS_LIST.append(costW.item())
-    FC_LOSS_LIST.append(delta_costW.item())
-    G_T.append(1*mdl.weight_W.grad.detach().numpy(force=True).flatten())
-    C_T.append(1*c_t.detach().numpy(force=True).flatten())
-    Y_T.append(1*y.detach().numpy(force=True).flatten())
-    LR_T.append(1*lrks.numpy(force=True).flatten())
-    BT_T.append(1*betain_ks.numpy(force=True).flatten())
+    SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
+    SVLISTS['cost'].append(costW.item())
+    SVLISTS['dfcost'].append(delta_costW.item())
+    SVLISTS['gt'].append(1*mdl.weight_W.grad.detach().numpy(force=True).flatten())
+    SVLISTS['ct'].append(1*c_t.detach().numpy(force=True).flatten())
+    SVLISTS['yt'].append(1*y.detach().numpy(force=True).flatten())
+    SVLISTS['sst'].append(1*lrks.numpy(force=True).flatten())
+    SVLISTS['btt'].append(1*betain_ks.numpy(force=True).flatten())
     print(f"fractional loss change: {delta_costW}")  
       
     if k_id > 1 and (delta_costW < ERR_OPT_ACC): break
@@ -150,14 +102,70 @@ def get_optimal_sets(POP_FILES, n, c_t):
 
 
 
+
+
+# GLOBAL configs
+# print(Path.cwd())
+SERVER_ROOT = Path(__file__).parents[0]
+SCRATCH_FOLDER = "alle_frq_dirs/test_af"
+# SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
+DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
+# print(server_root)
+# print(data_root)
+
+# search+select .frq files in alle_frq_dirs/test_af
+POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
+
+N_EFF = len(POP_FILES)
+# N_EFF = 5
+USE_CUDA = False
+MAX_BATCHSIZE = 512
+MAX_EPOCHS = 1
+ERR_OPT_ACC = 1E-15 
+QUAD_OBJ_CHOICE = True # 1: ~LIN | 0: GEN 
+USE_CORR = True
+
+if QUAD_OBJ_CHOICE:
+  MAX_STEPS = (N_EFF**2)
+else: MAX_STEPS = 2500
+
+# buffer_size: data size < actual data size to load into mem. 
+# batch_size: selected data size per batch <= buffer_size
+# onesample_size: size of one data-point >= 1, < buffer_size
+data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
+
+n = data_ldr.neff
+# instantiate self-supervised model
+mdl = QSSLNet(in_dim=n,out_dim=n, eps=ERR_OPT_ACC)
+if USE_CUDA: 
+  mdl = mdl.cuda() 
+
+if QUAD_OBJ_CHOICE:
+  mdl.set_learner(
+    AutoSGMQuad(mdl.Lin_W.parameters(), eps=ERR_OPT_ACC, usecuda=USE_CUDA) 
+    )
+else: 
+  # create plots for -2,-3,-4,-5,-6,-7,-8 comparing step-size for iteration dep and constant with respect to performance (c_t converging/y_t converging/loss).
+  mdl.set_learner(
+      AutoSGMGen(mdl.Lin_W.parameters(),auto=True, lr_init=1e-2, beta_in_smooth=0.9, beta_den=0.99, beta_num=0.99, usecuda=USE_CUDA),
+      )
+
 for epoch in range(MAX_EPOCHS):
   ''' 1 EPOCH BEGIN.'''
   # per iteration list
-  LOSS_LIST, FC_LOSS_LIST = [],[]
-  W_T, G_T = [],[]
-  C_T, Y_T, LR_T, BT_T = [],[],[],[]
+  SVLISTS = dict()
+  SVLISTS['cost'] = []
+  SVLISTS['dfcost'] = []
+  SVLISTS['wt'] = []
+  SVLISTS['gt'] = []
+  SVLISTS['ct'] = []
+  SVLISTS['yt'] = []
+  SVLISTS['sst'] = []
+  SVLISTS['btt'] = []
+
   
-  W_T.append(1*mdl.weight_W.detach().numpy(force=True).flatten())
+  
+  SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
   print("Epoch: " + str(epoch+1)) 
   walltime = time.time()
   
@@ -171,8 +179,7 @@ for epoch in range(MAX_EPOCHS):
   #.. learn after full pass over data
   loss, c_t, y, alphas, betas = trainmdl(mdl, A,
           USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
-          QUAD_OBJ_CHOICE, LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-          C_T, Y_T, LR_T, BT_T)
+          QUAD_OBJ_CHOICE, SVLISTS)
   
   walltime = (time.time() - walltime)/60 
   print(f"\nTotal batches: {b_idx+1}, time elapsed: {walltime:.2f}-mins") 
@@ -310,9 +317,9 @@ for epoch in range(MAX_EPOCHS):
 
   # COST
   # plt.rcParams.update(plt.rcParamsDefault)
-  x = np.arange(1, len(LOSS_LIST)+1)
-  lloss = np.array(LOSS_LIST)
-  lfcloss = np.array(FC_LOSS_LIST)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  lloss = np.array(SVLISTS['cost'])
+  lfcloss = np.array(SVLISTS['dfcost'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.5)
   fig = plt.figure(figsize=figsz,tight_layout=True, dpi=1200)
@@ -338,9 +345,9 @@ for epoch in range(MAX_EPOCHS):
   # plt.show()
   
   
-  # P_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(C_T)
+  # C_T 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['ct'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -362,9 +369,9 @@ for epoch in range(MAX_EPOCHS):
   plt.close(fig)
   
   
-  # Y_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(Y_T)
+  # SVLISTS['yt'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['yt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -386,9 +393,9 @@ for epoch in range(MAX_EPOCHS):
   plt.close(fig)
   
   
-  # LR_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(LR_T)
+  # SVLISTS['sst'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['sst'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -411,8 +418,8 @@ for epoch in range(MAX_EPOCHS):
   plt.close(fig)
   
   # BTi_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(BT_T)
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['btt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -434,9 +441,9 @@ for epoch in range(MAX_EPOCHS):
   plt.close(fig)
   
   
-  # G_T 
-  x = np.arange(1, len(LOSS_LIST)+1)
-  y = np.array(G_T)
+  # SVLISTS['gt'] 
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['gt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -458,9 +465,9 @@ for epoch in range(MAX_EPOCHS):
   plt.close(fig)
   
   
-  # W_T 
-  x = np.arange(0, len(LOSS_LIST)+1)
-  y = np.array(W_T)
+  # SVLISTS['wt'] 
+  x = np.arange(0, len(SVLISTS['cost'])+1)
+  y = np.array(SVLISTS['wt'])
   plt.rcParams['axes.linewidth'] = 0.35
   figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True)
@@ -478,5 +485,32 @@ for epoch in range(MAX_EPOCHS):
 
   plt.tight_layout(pad=0.25)
   figpath = f"{svpath}/w_t_curve.png"
+  plt.savefig(figpath, dpi=1200)
+  plt.close(fig)
+  
+  
+  # norm
+  x = np.arange(1, len(SVLISTS['cost'])+1)
+  y1 = np.array([ np.linalg.norm(cvt - SVLISTS['ct'][-1]) for cvt in SVLISTS['ct'] ])
+  y2 = np.array([ np.linalg.norm(cvt - SVLISTS['ct'][-1], float(np.inf)) for cvt in SVLISTS['ct'] ])
+  plt.rcParams['axes.linewidth'] = 0.35
+  figsz = (0.7, 0.4)
+  fig = plt.figure(figsize=figsz,tight_layout=True)
+  gs = gridspec.GridSpec(1,1)
+  ax = [plt.subplot(gsi) for gsi in gs]
+  ax[0].plot(x,y1,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_2$")
+  ax[0].plot(x,y2,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_1$")
+  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
+  ax[0].set_ylabel(r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert$", fontsize=2, labelpad=1.5)
+  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
+  csts = {'LW':0.25}
+  #
+  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
+  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
+  ax[0].margins(y=0.05, tight=True)
+  ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=1.5, fancybox=False, edgecolor='black', frameon=False)
+  
+  plt.tight_layout(pad=0.25)
+  figpath = f"{svpath}/normctrbrel_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)

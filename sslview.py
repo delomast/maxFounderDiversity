@@ -141,11 +141,17 @@ def run_web_ssl(cfgs):
 
   for epoch in range(MAX_EPOCHS):
     ''' EPOCH BEGIN: A single pass through the data'''
-    LOSS_LIST, FC_LOSS_LIST = [],[]
-    W_T, G_T = [],[]
-    C_T, Y_T, LR_T, BT_T = [],[],[],[]
+    SVLISTS = dict()
+    SVLISTS['cost'] = []
+    SVLISTS['dfcost'] = []
+    SVLISTS['wt'] = []
+    SVLISTS['gt'] = []
+    SVLISTS['ct'] = []
+    SVLISTS['yt'] = []
+    SVLISTS['sst'] = []
+    SVLISTS['btt'] = []
     
-    W_T.append(1*mdl.weight_W.detach().numpy(force=True).flatten())
+    SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
     print("Epoch: " + str(epoch+1)) 
     walltime = time.time()
     ''' PART 1: LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
@@ -157,8 +163,7 @@ def run_web_ssl(cfgs):
     #.. learn after full pass over data
     loss, c_t, y, alphas, betas = trainmdl(mdl, A,
             USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
-            QUAD_OBJ_CHOICE, LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-            C_T, Y_T, LR_T, BT_T)  
+            QUAD_OBJ_CHOICE, SVLISTS)  
           
     ''' EPOCH END.'''
     walltime = (time.time() - walltime)/60 
@@ -174,8 +179,7 @@ def run_web_ssl(cfgs):
     ''' PLOTS. ''' 
     # n,phat,pop_sortidxs,z,dz,klow,kupp
     web_render_results(PLOT_PATH, n, results,
-            LOSS_LIST, FC_LOSS_LIST, W_T, G_T,
-            C_T, Y_T, LR_T, BT_T)
+            SVLISTS)
     
   return results
   

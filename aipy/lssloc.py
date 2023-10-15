@@ -95,8 +95,8 @@ class QSSLNet(nn.Module):
     ''' Forward Pass
     '''
     if xinp is not None:
-      self.x = 1*xinp
-    y = self.Lin_W(self.x)  
+      self.x = 1*xinp # +/- c_{t-1} works
+    y =  self.Lin_W(self.x)  
     return y
   # def forward(self, inp=None):
   #   ''' Forward Pass
