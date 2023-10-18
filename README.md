@@ -7,7 +7,11 @@
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
   <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
 </picture>
-
+<picture>
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+</picture>
 
 A Neural network algorithm to choose which populations $`s_j`$ to sample broodstock from and in what proportions $`\mathbf{c}^\star`$ to maximize genetic diversity (expected heterozygosity) in the offspring population. Input data is a set of populations that could be sampled from (with known allele frequencies at a common set of loci), or a co-ancestry matrix.
 

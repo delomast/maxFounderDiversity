@@ -81,7 +81,25 @@ if args.coan_matrix:
   if ext[-1] == 'npz':
     POP_FILES = np.load(args.coan_matrix)['arr_0']
     
+  ispd = np.all(np.linalg.eigvals(POP_FILES) > 0)
+  print('p.d matrix',ispd)
+  if not ispd: raise ValueError('Data matrix not positive-definite!')
   ismatrix = True
+
+  # nred = 500
+  # print(POP_FILES[0,nred])
+  # print(POP_FILES[nred,0])
+  # print(POP_FILES[nred,:])
+  # print(POP_FILES[:,nred])
+  # for idev, ev in enumerate(np.linalg.eigvals(POP_FILES).tolist()):
+  #   print(idev,'->',ev)
+  # POP_FILES = POP_FILES[0:nred,0:nred]
+  # print(POP_FILES)
+  
+  # print(np.linalg.cond(POP_FILES))
+  # print(np.min(np.abs(POP_FILES)))
+  # print(np.max(np.abs(POP_FILES)))
+  # raise ValueError('Data matrix not positive-definite!')
 elif args.files:
   inpfiles = []
   for file in args.files:

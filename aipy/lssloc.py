@@ -121,11 +121,17 @@ class QSSLNet(nn.Module):
     if A.shape[0] != A.shape[1]:
       raise Exception(f"Expected data matrix should be {self.out_dim} x {self.out_dim}")
     
+    b = self.ones_vec+0
+    
+    # fix for ~0 value, any semidefiniteness in matrix
+    if A.abs().min() < 1e-3:
+      A.add_(1e-4) 
+    
     if use_corr:
       self.M = torch.diag(1/(torch.diag(A).sqrt()))
         
     self.A = (self.M.mm(A.mm(self.M)))
-    self.b = (self.M.mm(self.ones_vec))
+    self.b = (self.M.mm(b))
       
       
   def quadcost(self, y):
