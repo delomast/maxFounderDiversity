@@ -101,4 +101,8 @@ for epoch in range(MAX_EPOCHS):
   PLOT_PATH = str(SERVER_ROOT/f"static/trainplts/{SCRATCH_FOLDER}")
   os.makedirs(PLOT_PATH, exist_ok=True)
   web_render_results(PLOT_PATH,n,result,SVLISTS, skip_heavy_plots=False)
+  print('Done!')
+  dir_list = os.listdir(PLOT_PATH)
+  print("Saved Decision Plots to\n'",PLOT_PATH,"'\n")
+  for dir_file in dir_list: print(dir_file) 
   

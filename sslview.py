@@ -175,6 +175,10 @@ def run_web_ssl(cfgs):
     # n,phat,pop_sortidxs,z,dz,klow,kupp
     web_render_results(PLOT_PATH, n, results,
             SVLISTS, skip_heavy_plots=False)
+    print('Done!')
+    dir_list = os.listdir(PLOT_PATH)
+    print("Saved Decision Plots to\n'",PLOT_PATH,"'\n")
+    for dir_file in dir_list: print(dir_file) 
     
   return results
   
