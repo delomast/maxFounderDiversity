@@ -48,7 +48,7 @@ if not override:
                       help='directory path to source files (on disk)', 
                       type=Path)
   group.add_argument("--coan_matrix", 
-                      help='conacestry matrix path (on disk)', 
+                      help='co-ancestry matrix path (on disk)', 
                       type=Path)
 
   args = parser.parse_args()
