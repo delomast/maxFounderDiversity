@@ -19,7 +19,7 @@ Input data is either a *set of populations that could be sampled from (with know
 
 Developed with the application of creating base populations for aquaculture breeding programs in mind.
 
-In the first poster figure. It can be observed that out of $n=25$ populations, a lower bound $k=10$ an  upper bound $k=18$ populations are recommended to minimize co-ancestry with little diminishing returns. This respectively corresponds to a $60\\%$ and $28\\%$ reduction in the number of input populations. This removal of redundancy, would translate to savings in monetary-cost and time in setting up a breeding program than when the whole $n=25$ populations were to be used. 
+In the first poster figure. It can be observed that out of $n=25$ populations, a lower bound $k=10$ an  upper bound $k=18$ populations are recommended to minimize co-ancestry with little diminishing returns. This respectively corresponds to a $60\\%$ and $28\\%$ reduction in the number of input populations. This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
 
 The second poster figure, shows the ordered ranking of each of the $25$-population set, by how much they contribute to the variation in the set.
 
