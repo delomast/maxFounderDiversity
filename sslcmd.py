@@ -9,14 +9,8 @@ import secrets
 import torch
 import torch.nn as nn
 
-import numpy as np
-import pandas as pd
 
-from aipy.lssloc import QSSLNet
-from aipy.asgm_quad import AutoSGMQuad
-from aipy.asgm import AutoSGM
-from datapy.popdataloader import PopDatasetStreamerLoader
-from utility import trainmdl, get_optimal_sets, render_results, web_render_results
+from utility import *
 
 import matplotlib
 matplotlib.use("Agg")
@@ -33,37 +27,58 @@ def str2bool(s):
         raise ValueError("Input should be False or True")
     return s == 'True'
   
-parser = argparse.ArgumentParser(description="SSL CLI Tool!")
+override = False # production behaviour.
+# override = True # uncomment for testing/debugging.
 
-parser.add_argument("-b", "--batchsize", help='batch-size (int)', 
-                    type=int, default=1)
+if not override:
+  parser = argparse.ArgumentParser(description="SSL CLI Tool!")
 
-parser.add_argument("-s", "--scaler", help='normalize data (bool)', 
-                    type=str2bool, default=True)
+  parser.add_argument("-b", "--batchsize", help='batch-size (int)', 
+                      type=int, default=1)
+  parser.add_argument("-s", "--scaler", help='normalize data (bool)', 
+                      type=str2bool, default=True)
+  parser.add_argument("-c", "--MAXSTEPS", help="upper limit on the total number of learning iterations (int)", type=int, default=100)
+  parser.add_argument("-m", "--NO_MAXSTEPS", help="don't max-out the total number of learning iterations (bool)", type=str2bool, default=True)
 
-group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("--files", 
-                    help='list of source files', 
-                    type=argparse.FileType('r'), nargs='+')
-group.add_argument("--source_dir", 
-                    help='directory path to source files (on disk)', 
-                    type=Path)
-group.add_argument("--coan_matrix", 
-                    help='conacestry matrix path (on disk)', 
-                    type=Path)
+  group = parser.add_mutually_exclusive_group(required=True)
+  group.add_argument("--files", 
+                      help='list of source files', 
+                      type=argparse.FileType('r'), nargs='+')
+  group.add_argument("--source_dir", 
+                      help='directory path to source files (on disk)', 
+                      type=Path)
+  group.add_argument("--coan_matrix", 
+                      help='conacestry matrix path (on disk)', 
+                      type=Path)
 
-args = parser.parse_args()
+  args = parser.parse_args()
+  coan_matrix = args.coan_matrix
+  files = args.files
+  source_dir = args.source_dir
+
+  cfgs = {}
+  cfgs["MAX_BATCHSIZE"] = args.batchsize
+  cfgs["USE_CORR"] = args.scaler
+  cfgs["NO_MAXSTEPS"] = args.NO_MAXSTEPS
+  cfgs["MAXSTEPS"] = args.MAXSTEPS
+
+  print(args)
+else: 
+  ''' 
+  Test- override cmdline, note: comment out from first 
+  'parser = ...' line to 'print(args)' line
+  '''
+  cfgs = {}
+  cfgs["MAX_BATCHSIZE"] = 1
+  cfgs["USE_CORR"] = False
+  cfgs["NO_MAXSTEPS"] =  False
+  cfgs["MAXSTEPS"] = 1000
+  coan_matrix = "coan_matrix_files/plink_mat.rel"
+  files =None
+  source_dir = None
 
 
 secret_key = secrets.token_hex()
-cfgs = {}
-cfgs["MAX_BATCHSIZE"] = args.batchsize
-# cfgs["STREAM_LEARN"] = args.streamer
-cfgs["USE_CORR"] = args.scaler
-# if args.learner == "quad":
-# cfgs["QUAD_OBJ_CHOICE"] = True
-print(args)
-
 # SERVER_ROOT = Path(__file__).parents[0]
 # DATA_PATH = (SERVER_ROOT / f"static/cmdsession/{secret_key}/alle_frq_dirs/test_af" ).resolve()
 # os.makedirs(DATA_PATH, exist_ok=True)
@@ -71,15 +86,15 @@ print(args)
 
 ismatrix = False # logic to know if a pre-computed co-ancestry matrix is used.
 
-ext = str(args.coan_matrix).split('.')
-
-if args.coan_matrix:
+ext = str(coan_matrix).split('.')
+if coan_matrix:
   if ext[-1] in ['txt', 'csv', 'rel']:
-    POP_FILES = np.loadtxt(args.coan_matrix)
+    POP_FILES = np.loadtxt(coan_matrix)
   if ext[-1] == 'npy':
-    POP_FILES = np.load(args.coan_matrix)
+    POP_FILES = np.load(coan_matrix)
   if ext[-1] == 'npz':
-    POP_FILES = np.load(args.coan_matrix)['arr_0']
+    POP_FILES = np.load(coan_matrix)['arr_0']
+  # else try loading as txt, if this fails , throw error
     
   ispd = np.all(np.linalg.eigvals(POP_FILES) > 0)
   print('p.d matrix',ispd)
@@ -100,20 +115,19 @@ if args.coan_matrix:
   # print(np.min(np.abs(POP_FILES)))
   # print(np.max(np.abs(POP_FILES)))
   # raise ValueError('Data matrix not positive-definite!')
-elif args.files:
+elif files:
   inpfiles = []
-  for file in args.files:
+  for file in files:
     inpfiles.append(file.name)
   POP_FILES = inpfiles
   print(POP_FILES)
 else:
-  cfgs["DATA_PATH"] = args.source_dir
+  cfgs["DATA_PATH"] = source_dir
   DATA_ROOT = cfgs["DATA_PATH"]
   POP_FILES = glob.glob(f"{DATA_ROOT}/*")
   print(DATA_ROOT)
   
 cfgs["S_PLOT_PATH"] = f"static/cmdsession/{secret_key}/trainplts"
-# print(ismatrix)
   
 
 
@@ -134,7 +148,9 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
   ERR_OPT_ACC = 1E-15 # 1E-5, 1E-8, 1E-10
   EPS = 1E-15
   QUAD_OBJ_CHOICE = True
-  MAX_STEPS = (N_EFF**2)
+  MAX_STEPS = cfgs["MAXSTEPS"]
+  NO_MAXSTEPS = cfgs["NO_MAXSTEPS"]
+  
 
   # batch_size: selected data size per batch
   if not ismatrix:
@@ -173,21 +189,20 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
       # load dataset, and dataloader
       for (b_idx, batch) in enumerate(data_ldr):
         A = batch[0] #homozygozity
-      
-      #.. learn after full pass over data
-      loss, c_t, y, alphas, betas = trainmdl(mdl, A,
-              USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
-              QUAD_OBJ_CHOICE, SVLISTS)  
-      
+        
     else:
       b_idx = 0
+      batch = None
       A = torch.tensor(POP_FILES, dtype=torch.float)
-      #.. learn after full pass over data
-      loss, c_t, y, alphas, betas = trainmdl(mdl, A,
-              USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
-              QUAD_OBJ_CHOICE, SVLISTS)  
       
-
+    #.. learn after full pass over data
+    loss, c_t, y, alphas, betas = trainmdl(mdl, A,
+          USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, ERR_OPT_ACC, 
+          QUAD_OBJ_CHOICE, SVLISTS)  
+      
+    ''' PART 2: CHOOSE POPULATIONS. '''
+    results = get_optimal_sets(POP_FILES, n, c_t, ismatrix)
+    
     ''' EPOCH END.'''
     walltime = (time.time() - walltime)/60 
     print(f"\nTotal batches: {b_idx+1}, time elapsed: {walltime:.2f}-mins") 
@@ -195,13 +210,10 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
       data_ldr.close()
       data_ldr.batches = b_idx+1
     print("End epoch.")
-
-    ''' PART 2: CHOOSE POPULATIONS. '''
-    results = get_optimal_sets(POP_FILES, n, c_t, ismatrix)
-
+    # Print out ...
+    print(f"loss:{loss}")  
     ''' PLOTS. ''' 
-    web_render_results(PLOT_PATH, n, results,
-            SVLISTS)
+    web_render_results(PLOT_PATH, n, results, SVLISTS, skip_heavy_plots=False)
     
   return PLOT_PATH
   

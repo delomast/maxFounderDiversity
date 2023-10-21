@@ -3,19 +3,27 @@
 ![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/ci.yml/badge.svg?event=push)
 
 <picture>
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+  <img style="mix-blend-mode: luminosity; width=0.5;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+</picture><picture>
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
   <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
 </picture>
-<picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-</picture>
 
-A Neural network algorithm to choose which populations $`s_j`$ to sample broodstock from and in what proportions $`\mathbf{c}^\star`$ to maximize genetic diversity (expected heterozygosity) in the offspring population. Input data is a set of populations that could be sampled from (with known allele frequencies at a common set of loci), or a co-ancestry matrix.
+
+A self-supervised neural network algorithm for automatically choosing (or ranking) which populations $s_j$ out of $n>1$ populations to sample broodstock from and in what proportions $\mathbf{c}^\star$ to maximize genetic diversity (or minimize co-ancenstry) in the offspring population. 
+
+Input data is either a *set of populations that could be sampled from (with known allele frequencies at a common set of loci)*, or a *co-ancestry matrix*. The recommended $k$ number out of $n$ populations to combine are given in the set $\mathcal{H}_k\subseteq\mathcal{H}^\star$.
 
 Developed with the application of creating base populations for aquaculture breeding programs in mind.
+
+In the first poster figure. It can be observed that out of $n=25$ populations, a lower bound $k=10$ an  upper bound $k=18$ populations are recommended to minimize co-ancestry with little diminishing returns. This respectively corresponds to a $60\%$ and $28\%$ reduction in the number of input populations. This removal of redundancy, would translate to savings in monetary-cost and time in setting up a breeding program than when the whole $n=25$ populations were to be used. 
+
+The second poster figure, shows the ordered ranking of each of the $25$-population set, by how much they contribute to the variation in the set.
+
+
 
 <details>
 <summary>Motivation</summary>
@@ -39,15 +47,11 @@ Given a number of populations, $n$, we typically want to select $k\le n$ foundin
 <details>
   <summary>Objective</summary>
   Here we present a self-supervised learning algorithm for efficiently solving large-scale problems of this nature. 
-
   
   Our tool assists with making the decision of which $k$ combination of the $n$ populations to choose and the relative proportion (or number) of broodstock from each? 
   
-  
-  Given known allele frequencies for $l$ loci in $n$ available populations. The goal of our learning algorithm is to both select a subset $k \le n$ populations and determine the number of individuals to select from each of $k$ populations in a way that maximizes the genetic variation of the given group, with the least diminishing return.
+  Given known allele frequencies for $l$ loci in $n$ available populations. The goal of our learning algorithm is to both select a subset $k \le n$ populations and determine the relative proportion of individuals to select from each selected population in a way that maximizes the genetic variation of the given population-set, with the least diminishing return.
 </details>
-
-
 
 #### Installing
 Clone this repo. From the root path of this repo on your local machine:
@@ -57,8 +61,7 @@ Install a python virtual environment (See: <a>https://packaging.python.org/en/la
 Install required python packages with the requirements.txt file `pip install -r requirements.txt`
 
 #### Quick Test
-To test the tool. Run: `python ssltest.py` 
-
+A quick way to test the tool. Run: `python ssltest.py` from the main source-code directory.
 
 #### Command Line Interface CLI
 In a terminal window, we provide the command ``sslcmd``. 
@@ -66,35 +69,33 @@ In a terminal window, we provide the command ``sslcmd``.
 Entering ``py sslcmd.py --help`` in the command window returns:
 
 ```
-usage: sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)
+usage: sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] [-c MAXSTEPS] [-m NO_MAXSTEPS] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)
 
 SSL CLI Tool!
 
 options:
-
   -h, --help            show this help message and exit
-
   -b BATCHSIZE, --batchsize BATCHSIZE
                         batch-size (int)
-
   -s SCALER, --scaler SCALER
                         normalize data (bool)
-
+  -c MAXSTEPS, --MAXSTEPS MAXSTEPS
+                        upper limit on the total number of learning iterations (int)
+  -m NO_MAXSTEPS, --NO_MAXSTEPS NO_MAXSTEPS
+                        don't max-out the total number of learning iterations (bool)
   --files FILES [FILES ...]
                         list of source files
-
   --source_dir SOURCE_DIR
                         directory path to source files (on disk)
-
   --coan_matrix COAN_MATRIX
                         conacestry matrix path (on disk)
 ```
 #### CLI Examples:
 
 ##### Example 1
-- ``py sslcmd.py --source_dir ./alle_frq_dirs/test_af -b 1024``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/test_af -b 256``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/test_af' and configures the tool's data loader with a batch-size of 1024.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/test_af' and configures the tool's data loader with a batch-size of 256.
 
 ##### Example 2
 - ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af -b 1``
@@ -111,7 +112,7 @@ These each passess in a file (*that can be loaaded with `numpy`*) containing a c
 #### Web Frontend
 In a terminal, run: 
 `
-flask --app sslview run --debug --host=0.0.0.0  
+flask --app sslview --debug run --host=0.0.0.0  
 `
 to access the tool in form of a user-friendly web application.
 <details>

@@ -3,31 +3,18 @@
     "k_upp": 8,
     "id_k_low": 4,
     "id_k_upp": 7,
-    "c_star": [
-        0.14488354325294495,
-        0.10326351970434189,
-        0.09882176667451859,
-        0.09760139882564545,
-        0.0955147072672844,
-        0.09350580722093582,
-        0.09016013890504837,
-        0.071796715259552,
-        0.07022850215435028,
-        0.06859217584133148,
-        0.06563170999288559
-    ],
-    "pop_sort_idxs": [
-        4,
-        8,
-        9,
-        2,
-        7,
-        5,
-        6,
-        0,
-        3,
-        1,
-        10
+    "c_sort_star": [
+        0.1445363312959671,
+        0.10443830490112305,
+        0.1001342386007309,
+        0.09770362824201584,
+        0.09625167399644852,
+        0.09435716271400452,
+        0.0902681052684784,
+        0.07068175822496414,
+        0.07048987597227097,
+        0.06668691337108612,
+        0.06445207446813583
     ],
     "low_pop_combs": [
         4,
@@ -46,7 +33,37 @@
         6,
         0
     ],
-    "pop_sort_nms": [
+    "low_pop_combs_names": [
+        "subset_EPFL",
+        "subset_NEH18",
+        "subset_VIMS-F-DEBY",
+        "subset_CMC",
+        "subset_LH"
+    ],
+    "upp_pop_combs_names": [
+        "subset_EPFL",
+        "subset_NEH18",
+        "subset_VIMS-F-DEBY",
+        "subset_CMC",
+        "subset_LH",
+        "subset_HC-NC",
+        "subset_HI",
+        "subset_CH"
+    ],
+    "pop_sort_idxs": [
+        4,
+        8,
+        9,
+        2,
+        7,
+        5,
+        6,
+        0,
+        3,
+        1,
+        10
+    ],
+    "pop_sort_names": [
         "subset_EPFL",
         "subset_NEH18",
         "subset_VIMS-F-DEBY",
@@ -58,22 +75,5 @@
         "subset_CS19",
         "subset_CLP",
         "subset_VIMS-F"
-    ],
-    "low_pop_combs_nm": [
-        "subset_EPFL",
-        "subset_NEH18",
-        "subset_VIMS-F-DEBY",
-        "subset_CMC",
-        "subset_LH"
-    ],
-    "upp_pop_combs_nm": [
-        "subset_EPFL",
-        "subset_NEH18",
-        "subset_VIMS-F-DEBY",
-        "subset_CMC",
-        "subset_LH",
-        "subset_HC-NC",
-        "subset_HI",
-        "subset_CH"
     ]
 }

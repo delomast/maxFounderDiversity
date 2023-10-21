@@ -187,11 +187,11 @@ class PopDatasetStreamerLoader():
                     # He_Smat_l = 0.5*(1-Ho_Smat_l)
                     
                     self.line_cnt += 1    
-                    _, self.Ho_mat, _ = self.stable_avgfcn.torch_ew_compute(
+                    _, self.Ho_mat = self.stable_avgfcn.torch_ew_compute(
                         in_t=Ho_Smat_l, x=self.Ho_mat, beta=self.BETA, 
                         step=self.line_cnt, mode=self.avgmode
                     )
-                    # _, self.He_mat, _ = self.stable_avgfcn.torch_ew_compute(
+                    # _, self.He_mat = self.stable_avgfcn.torch_ew_compute(
                     #     in_t=He_Smat_l, x=self.He_mat, beta=self.BETA, 
                     #     step=self.line_cnt, mode=self.avgmode
                     # )

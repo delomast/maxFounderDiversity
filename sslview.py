@@ -6,14 +6,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-import numpy as np
-import pandas as pd
-
-from aipy.lssloc import QSSLNet
-from aipy.asgm_quad import AutoSGMQuad
-from aipy.asgm import AutoSGM
-from datapy.popdataloader import PopDatasetStreamerLoader
-from utility import trainmdl, get_optimal_sets, render_results, web_render_results
+from utility import *
 
 import matplotlib
 matplotlib.use("Agg")
@@ -52,6 +45,7 @@ def index():
 @app.route('/setup', methods=['GET', 'POST'])
 def setup():
   
+  #todo: add more options like in sslcmd.py
   app.secret_key = secrets.token_hex()
   session["MAX_BATCHSIZE"] = request.form["batchsize"]
   # session["STREAM_LEARN"] = request.form["streamer"]
@@ -126,7 +120,8 @@ def run_web_ssl(cfgs):
   ERR_OPT_ACC = 1E-15 # 1E-5, 1E-8, 1E-10
   QUAD_OBJ_CHOICE = True
   MAX_STEPS = (N_EFF**2)
-
+  NO_MAXSTEPS = True
+  
   # batch_size: selected data size per batch
   data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
   n = data_ldr.neff
@@ -162,7 +157,7 @@ def run_web_ssl(cfgs):
     
     #.. learn after full pass over data
     loss, c_t, y, alphas, betas = trainmdl(mdl, A,
-            USE_CUDA, USE_CORR, MAX_STEPS, ERR_OPT_ACC, 
+            USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, ERR_OPT_ACC, 
             QUAD_OBJ_CHOICE, SVLISTS)  
           
     ''' EPOCH END.'''
@@ -179,7 +174,7 @@ def run_web_ssl(cfgs):
     ''' PLOTS. ''' 
     # n,phat,pop_sortidxs,z,dz,klow,kupp
     web_render_results(PLOT_PATH, n, results,
-            SVLISTS)
+            SVLISTS, skip_heavy_plots=False)
     
   return results
   

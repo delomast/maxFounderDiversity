@@ -12,14 +12,14 @@
   <table id="optpopset">
     <thead>
       <tr>
-        <th> \( k \) </th>
+        <th> \( j \) </th>
         {% for col in optcombs_cols %}
           {% if col == "combs_idx"%}
-            <th> Foundation Set,  \( \mathcal{P}_k \) </th>
+            <th> Combination Set,  \( \mathcal{H}_j \) </th>
           {% elif col == "z"%}
-            <th> Cummulative Value,  \( z_k \) </th>
+            <th> Value,  \( z_k \) </th>
           {% elif col == "dz"%}
-            <th> \( \Delta z_k \) </th>
+            <th> Returns, \( d z_k \) </th>
           {% else %}
             <th> {{ col }} </th>
           {% endif %}
@@ -67,7 +67,7 @@
           {% elif col == "p" %}
             <th> {{ "Relative contribution (%)" }}, \(p_i\) </th>
           {% else %}
-            <th> {{ col }} </th>
+            <th> {{ col }} (\(\%\)) </th>
           {% endif %}
         {% endfor %}
       </tr>

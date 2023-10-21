@@ -118,17 +118,27 @@ class QSSLNet(nn.Module):
     # when use_corr is True: preconditioned system 
     # normalizes/transform (cov. to corr. form)
     
+    # expects all entries in A to be positively correlated.
     if A.shape[0] != A.shape[1]:
       raise Exception(f"Expected data matrix should be {self.out_dim} x {self.out_dim}")
     
     b = self.ones_vec+0
     
     # fix for ~0 value, any semidefiniteness in matrix
+    # and small negative entries.
     if A.abs().min() < 1e-3:
-      A.add_(1e-4) 
+      # A.add_(1e-1*torch.eye(self.in_dim)) 
+      # A.add_(1e-4)
+      if abs(min(A[A<0].tolist())) < 0.1:
+        A.abs_()
     
+    dd = 1/(torch.diag(A).sqrt())
+    # skip normalizing with diagonal, if diag elements are ~ 1
+    if (1 - (dd).mean()).abs() < 0.1: #todo
+      use_corr = False
+      print('.looks like matrix diagonal is already scaled.')
     if use_corr:
-      self.M = torch.diag(1/(torch.diag(A).sqrt()))
+      self.M = torch.diag(dd)
         
     self.A = (self.M.mm(A.mm(self.M)))
     self.b = (self.M.mm(b))
@@ -141,12 +151,12 @@ class QSSLNet(nn.Module):
     # f = 0.5*y'Ay - b'y  + 1
     return (0.5*y.T.mm(self.A.mm(y))).sub(((self.b.T.mm(y))-1))
   
-  def quadcost_noc(self, y):
-    '''
-    Quadratic cost function
-    '''
-    # f = 0.5*y'Ay
-    return (0.5*y.T.mm(self.A.mm(y)))
+  # def quadcost_noc(self, y):
+  #   '''
+  #   Quadratic cost function
+  #   '''
+  #   # f = 0.5*y'Ay
+  #   return (0.5*y.T.mm(self.A.mm(y)))
     
   @torch.no_grad()
   def delta_cost(self, f):
@@ -155,12 +165,6 @@ class QSSLNet(nn.Module):
       self.last_cost = 1*f
       return delta
     
-  @torch.no_grad()
-  def delta_cost_noc(self, f):
-      ''' Abs. fractional change in cost '''
-      delta = torch.abs( (f+self.eps-self.last_cost_noc)/(f+self.eps) )
-      self.last_cost_noc = 1*f
-      return delta
   
   @torch.no_grad()
   def csoftmax(self, inp):

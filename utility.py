@@ -2,6 +2,8 @@ import os,sys, shutil,glob,time,random,copy,math
 
 from pathlib import Path
 
+import json
+import collections
 
 import torch
 import torch.nn as nn
@@ -79,7 +81,7 @@ DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
 
 
 ''' PART 1: LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
-def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS, 
+def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, 
             ERR_OPT_ACC, QUAD_OBJ_CHOICE, SVLISTS):
   
   # accept data matrix
@@ -87,7 +89,7 @@ def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS,
     A = A.to('cuda',dtype=torch.float32) 
     
   mdl.data_matrix(A, use_corr=USE_CORR)
-  
+  zerocnt = 0
   for k_id in range(MAX_STEPS):
     # forward pass:
     
@@ -119,8 +121,10 @@ def trainmdl(mdl:QSSLNet, A, USE_CUDA, USE_CORR, MAX_STEPS,
     SVLISTS['sst'].append(1*lrks.numpy(force=True).flatten())
     SVLISTS['btt'].append(1*betain_ks.numpy(force=True).flatten())
     print(f"fractional loss change: {delta_costW}")  
-      
-    if k_id > 1 and (delta_costW < ERR_OPT_ACC): break
+    if delta_costW == 0: zerocnt+=1
+    
+    if (NO_MAXSTEPS and (k_id > 1) and (delta_costW < ERR_OPT_ACC)) or (zerocnt > 4): break
+    
     
   return costW.item(), 1*c_t, 1*y, 1*lrks, 1*betain_ks
 
@@ -166,12 +170,12 @@ def get_optimal_sets(POP_FILES, n, c_t, ismatrix= False):
   if not ismatrix:
     pop_names = [POP_FILES[p_id].split("\\")[-1].split("_af_")[0] for p_id in pop_sortidxs]
   else:
-    pop_names = [f"pop_{p_id}" for p_id in pop_sortidxs]
+    pop_names = [f"POP_{p_id}" for p_id in pop_sortidxs]
   combspop_nms = [pop_names[:p_idx+1] for p_idx in range(n)]
   
   result = {
-    'c_star':c_star,
-    'pop_sort_idxs': pop_sortidxs,
+    'c_star':c_star.tolist(),
+    'pop_sort_idxs': pop_sortidxs.tolist(),
     'z':z,'dz':dz,
     'k_low':klow_id+1,'k_upp':kupp_id+1,
     'id_k_low':klow_id,'id_k_upp':kupp_id,
@@ -187,7 +191,7 @@ def get_optimal_sets(POP_FILES, n, c_t, ismatrix= False):
   # for  k in range(result['k_low'],result['k_upp']+1):
   #   # print(f"k={k}, {result['id_pop_combs'][k-1]} =>\n{result['names_pop_combs'][k-1]}")
   #   print(f"k={k}, {result['pop_sort_idxs'].tolist()[0:k]} =>\n{result['names_pop_combs'][k-1]}")
-  print(f"k={result['k_low']}, {result['pop_sort_idxs'].tolist()[0:result['k_low']]} =>\n{result['names_pop_combs'][result['k_low']-1]}")
+  print(f"k={result['k_low']}, {result['pop_sort_idxs'][0:result['k_low']]} =>\n{result['names_pop_combs'][result['k_low']-1]}")
     
 
 
@@ -195,310 +199,10 @@ def get_optimal_sets(POP_FILES, n, c_t, ismatrix= False):
 
 
 ''' PLOTS. ''' 
-def render_results(n,result,SVLISTS):
-  
-  phat = result['c_star']
-  pop_sortidxs = result['pop_sort_idxs']
-  z = result['z']
-  dz = result['dz']
-  klow = result['k_low']
-  kupp = result['k_upp']
-  
-  '''
-  Plots results of this Learning process.
-  '''
-  x = np.arange(n) 
-  ctrb_xticks = [r"$\mathrm{\mathit{s}_{"+f"{p_idx}"+r"}}$" for p_idx in result['pop_sort_idxs']]  
-  pop_xticks = [r"$\mathcal{H}_{"+f"{p_idx+1}"+r"}$" for p_idx in range(n)]  
-  
-  fctrb_xticks = [ctrb_xticks[0], ctrb_xticks[kupp-1]]
-  fxtick_loc2 = [0, n-1]
-  fpop_xticks = [pop_xticks[0], pop_xticks[klow-1], pop_xticks[kupp-1],pop_xticks[-1]]
-  fxtick_loc = [0, klow-1, kupp-1, n-1]
-  
-  # cmap = ListedColormap(colors)
-  cmap = LinearSegmentedColormap.from_list("cbcmap", colors)
-  # cmapstr = "hsv"
-  # cmap = mpl.colormaps[cmapstr]
-  # cmap = mpl.colormaps[cmapstr].reversed() #.resampled(50)
-  
-  wx_ratio = n/2
-  svpath = str(SERVER_ROOT/f"static/trainplts/{SCRATCH_FOLDER}")
-  print('Saved plots:',svpath)
-  os.makedirs(svpath, exist_ok = True)
-  
-  jsresult = {
-    'k_low':result['k_low'],'k_upp':result['k_upp'],
-    'id_k_low':result['id_k_low'],'id_k_upp':result['id_k_upp'],
-    'c_star':result['c_star'].tolist(),
-    'pop_sort_idxs': result['pop_sort_idxs'].tolist(),
-    'low_pop_combs':result['pop_sort_idxs'].tolist()[0:result['k_low']],
-    'upp_pop_combs':result['pop_sort_idxs'].tolist()[0:result['k_upp']],
-    'pop_sort_nms': result['pop_sort_nms'],
-    'low_pop_combs_nm':result['pop_sort_nms'][0:result['k_low']],
-    'upp_pop_combs_nm':result['pop_sort_nms'][0:result['k_upp']],
-  }
-  
-  import json
-  resultpath = f"{svpath}/results.json"
-  def np_encoder(object):
-    if isinstance(object, np.generic):
-        return object.item()
-      
-  with open(resultpath, 'w', encoding='utf-8', errors='ignore') as svfile:
-    json.dump(jsresult, svfile, default=np_encoder, ensure_ascii=False, indent=4)
-  
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.13*wx_ratio, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-
-  setl = list(sorted(set(result['c_star'][0:klow]), key=result['c_star'].tolist().index))
-  seth = list(sorted(set(result['c_star'][0:kupp]) - set(result['c_star'][0:klow]), key=result['c_star'].tolist().index))
-  setd = list(sorted(set(result['c_star']) - set(result['c_star'][0:kupp]),key=result['c_star'].tolist().index))
-
-  xsetl = list(sorted(set(ctrb_xticks[0:klow]), key=ctrb_xticks.index))
-  xseth = list(sorted(set(ctrb_xticks[0:kupp]) - set(ctrb_xticks[0:klow]), key=ctrb_xticks.index))
-  xsetd = list(sorted(set(ctrb_xticks) - set(ctrb_xticks[0:kupp]), key=ctrb_xticks.index))
-
-  fctrb_xticks = [ctrb_xticks[0], ctrb_xticks[klow-1], ctrb_xticks[kupp-1], ctrb_xticks[n-1]]
-  fxtick_loc2 = [0, klow-1, kupp-1, n-1]
-
-  ax[0].bar(xsetl,setl, width=0.25)
-  ax[0].bar(xseth,seth, width=0.25)
-  ax[0].bar(xsetd,setd, width=0.25)
-  plt.xticks(fxtick_loc2, fctrb_xticks, rotation=0)  
-  
-  # ax[0].bar(ctrb_xticks,result['c_star'], color=cmap(result['c_star']))
-  # plt.xticks(x, ctrb_xticks, rotation=0)
-  # plt.xticks(fxtick_loc2, fctrb_xticks, rotation=0)
-
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{Ordered~populations}}$", fontsize=2, labelpad=1.5)
-  ax[0].set_ylabel(r"$\mathbf{c}^\star$",  fontsize=2, labelpad=1.5)  
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=2,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=2,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-  plt.tight_layout(pad=0.25)
-
-  figpath = f"{svpath}/relctrbs_sslplot.png"
-  plt.savefig(figpath, bbox_inches='tight', dpi=1200)
-  plt.close(fig)
-  
-  # grouping
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.16*wx_ratio, 0.7)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-
-  ax[0].plot(x,result['z'],label=r"$\mathrm{\mathbf{z}}$",marker='o',markersize=0.4,lw=0.25,markevery=fxtick_loc)
-  ax[0].plot(x,result['dz'],label=r"$d\mathrm{\mathbf{z}}$",marker='o',markersize=0.4,lw=0.25,markevery=fxtick_loc)
-
-  ax[0].axvspan(result['k_low']-1,result['k_upp']-1, facecolor='tab:green', alpha=0.25, linewidth=1)
-  
-  ax[0].annotate(r'$\mathcal{H}^\star$',xy=(result['k_low'],result['z'][result['k_low']]),xytext=((result['k_low']-1)+(result['k_upp']-result['k_low'])/2,result['z'][result['k_low']-1]), fontsize=4)
-  
-  # plt.xticks(x, pop_xticks, rotation=60)
-  plt.xticks(fxtick_loc, fpop_xticks, rotation=60)
-
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{optimal~population~subsets/combinations}},\mathcal{H}_j$", fontsize=2.5, labelpad=1.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{cummulative~value}, \mathbf{z}}$",  fontsize=2.5, labelpad=1.5)
-  
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=2,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=2.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-  ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=3, fancybox=False, edgecolor='black', frameon=False)
-  plt.tight_layout(pad=0.25)
-
-  figpath = f"{svpath}/popchoice_sslplot.png"
-  plt.savefig(figpath,  bbox_inches='tight', dpi=1200)
-  # plt.show()
-  plt.close(fig)
-
-  # COST
-  # plt.rcParams.update(plt.rcParamsDefault)
-  x = np.arange(1, len(SVLISTS['cost'])+1)
-  lloss = np.array(SVLISTS['cost'])
-  lfcloss = np.array(SVLISTS['dfcost'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.5)
-  fig = plt.figure(figsize=figsz,tight_layout=True, dpi=1200)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-
-  ax[0].plot(x,lloss,label=r"$f_t$",linewidth=0.3, marker=',', markersize=0.1, markevery=0.2)
-  ax[0].plot(x,lfcloss,label=r"${\delta^f_t}$",linewidth=0.3, marker=',', markersize=0.1, markevery=0.2)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{cost}}$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.25,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.25,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-  ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=2, fancybox=False, edgecolor='black', frameon=False)
-  
-  plt.tight_layout(pad=0.5)
-  figpath = f"{svpath}/cost_plot.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  # plt.show()
-  
-  
-  # P_T 
-  x = np.arange(1, len(SVLISTS['cost'])+1)
-  y = np.array(SVLISTS['ct'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-  ax[0].plot(x,y,linewidth=0.15)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{c}}_t$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-
-  plt.tight_layout(pad=0.25)
-  figpath = f"{svpath}/ctrbrel_curve.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  
-  
-  # SVLISTS['yt'] 
-  x = np.arange(1, len(SVLISTS['cost'])+1)
-  y = np.array(SVLISTS['yt'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-  ax[0].plot(x,y,linewidth=0.15)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{y}}_t$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-
-  plt.tight_layout(pad=0.25)
-  figpath = f"{svpath}/lin_y_curve.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  
-  
-  # SVLISTS['sst'] 
-  x = np.arange(1, len(SVLISTS['cost'])+1)
-  y = np.array(SVLISTS['sst'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-  ax[0].plot(x,y,linewidth=0.2,marker='+', markersize=0.05)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{\alpha}}_t$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  # plt.legend()
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-
-  plt.tight_layout(pad=0.25)
-  figpath = f"{svpath}/lrt_curve.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  
-  # BTi_T 
-  x = np.arange(1, len(SVLISTS['cost'])+1)
-  y = np.array(SVLISTS['btt'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-  ax[0].plot(x,y,linewidth=0.2, marker='+', markersize=0.05)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{{\beta}}_{i,t}$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-
-  plt.tight_layout(pad=0.25)
-  figpath = f"{svpath}/betai_t_curve.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  
-  
-  # SVLISTS['gt'] 
-  x = np.arange(1, len(SVLISTS['cost'])+1)
-  y = np.array(SVLISTS['gt'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-  ax[0].plot(x,y,linewidth=0.2)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{G}}_t$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-
-  plt.tight_layout(pad=0.25)
-  figpath = f"{svpath}/gradw_t_curve.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  
-  
-  # SVLISTS['wt'] 
-  x = np.arange(0, len(SVLISTS['cost'])+1)
-  y = np.array(SVLISTS['wt'])
-  plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.7, 0.4)
-  fig = plt.figure(figsize=figsz,tight_layout=True)
-  gs = gridspec.GridSpec(1,1)
-  ax = [plt.subplot(gsi) for gsi in gs]
-  ax[0].plot(x,y,linewidth=0.2)
-  ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{W}}_t$", fontsize=3, labelpad=1.5)
-  ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-  csts = {'LW':0.25}
-  #
-  ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-  ax[0].margins(y=0.05, tight=True)
-
-  plt.tight_layout(pad=0.25)
-  figpath = f"{svpath}/w_t_curve.png"
-  plt.savefig(figpath, dpi=1200)
-  plt.close(fig)
-  
-
-''' PLOTS. ''' 
 def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   
-  phat = results['c_star']
-  pop_sortidxs = results['pop_sort_idxs']
+  c_star_sorted = results['c_star']
+  pop_idxs_sorted = results['pop_sort_idxs']
   z = results['z']
   dz = results['dz']
   klow = results['k_low']
@@ -509,7 +213,7 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   '''
 
   x = np.arange(n) 
-  ctrb_xticks = [r"$\mathrm{\mathit{s}_{"+f"{p_idx}"+r"}}$" for p_idx in results['pop_sort_idxs']]  
+  ctrb_xticks = [r"$\mathrm{\mathit{s}_{"+f"{p_idx}"+r"}}$" for p_idx in pop_idxs_sorted]  
   pop_xticks = [r"$\mathcal{H}_{"+f"{p_idx+1}"+r"}$" for p_idx in range(n)] 
   
   fctrb_xticks = [ctrb_xticks[0], ctrb_xticks[kupp-1]]
@@ -517,6 +221,7 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   fpop_xticks = [pop_xticks[0], pop_xticks[klow-1], pop_xticks[kupp-1],pop_xticks[-1]]
   fxtick_loc = [0, klow-1, kupp-1, n-1]
   
+  sorted_name_ctrb = dict(zip(ctrb_xticks, c_star_sorted))
   
   # cmap = ListedColormap(colors)
   cmap = LinearSegmentedColormap.from_list("cbcmap", colors)
@@ -525,18 +230,19 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   # cmap = mpl.colormaps[cmapstr].reversed() #.resampled(50)
   
   jsresult = {
+    'quadfcn_cost': SVLISTS['cost'][-1],
     'k_low':results['k_low'],'k_upp':results['k_upp'],
     'id_k_low':results['id_k_low'],'id_k_upp':results['id_k_upp'],
-    'c_star':results['c_star'].tolist(),
-    'pop_sort_idxs': results['pop_sort_idxs'].tolist(),
-    'low_pop_combs':results['pop_sort_idxs'].tolist()[0:results['k_low']],
-    'upp_pop_combs':results['pop_sort_idxs'].tolist()[0:results['k_upp']],
-    'pop_sort_nms': results['pop_sort_nms'],
-    'low_pop_combs_nm':results['pop_sort_nms'][0:results['k_low']],
-    'upp_pop_combs_nm':results['pop_sort_nms'][0:results['k_upp']],
+    'c_sort_star':results['c_star'],
+    'low_pop_combs':results['pop_sort_idxs'][0:results['k_low']],
+    'upp_pop_combs':results['pop_sort_idxs'][0:results['k_upp']],
+    'low_pop_combs_names':results['pop_sort_nms'][0:results['k_low']],
+    'upp_pop_combs_names':results['pop_sort_nms'][0:results['k_upp']], 'pop_sort_idxs': results['pop_sort_idxs'],
+    'pop_sort_names': results['pop_sort_nms'],
+    'ranking': sorted_name_ctrb,
+    
   }
   
-  import json
   resultpath = f"{PLOT_PATH}/results.json"
   def np_encoder(object):
     if isinstance(object, np.generic):
@@ -554,20 +260,21 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   gs = gridspec.GridSpec(1,1)
   ax = [plt.subplot(gsi) for gsi in gs]
   
-  setl = list(sorted(set(results['c_star'][0:klow]), key=results['c_star'].tolist().index))
-  seth = list(sorted(set(results['c_star'][0:kupp]) - set(results['c_star'][0:klow]), key=results['c_star'].tolist().index))
-  setd = list(sorted(set(results['c_star']) - set(results['c_star'][0:kupp]),key=results['c_star'].tolist().index))
+  # categorizing sets by name, since name is unique compared to number. 
+  xsetl = list(sorted(collections.Counter(ctrb_xticks[0:klow]), key=ctrb_xticks.index))
+  setl = [sorted_name_ctrb[popnm_key] for popnm_key in xsetl]
+  xseth = list(sorted(collections.Counter(ctrb_xticks[0:kupp]) - collections.Counter(ctrb_xticks[0:klow]), key=ctrb_xticks.index))
+  seth = [sorted_name_ctrb[popnm_key] for popnm_key in xseth]
+  xsetd = list(sorted(collections.Counter(ctrb_xticks) - collections.Counter(ctrb_xticks[0:kupp]), key=ctrb_xticks.index))
+  setd = [sorted_name_ctrb[popnm_key] for popnm_key in xsetd]
 
-  xsetl = list(sorted(set(ctrb_xticks[0:klow]), key=ctrb_xticks.index))
-  xseth = list(sorted(set(ctrb_xticks[0:kupp]) - set(ctrb_xticks[0:klow]), key=ctrb_xticks.index))
-  xsetd = list(sorted(set(ctrb_xticks) - set(ctrb_xticks[0:kupp]), key=ctrb_xticks.index))
 
   fctrb_xticks = [ctrb_xticks[0], ctrb_xticks[klow-1], ctrb_xticks[kupp-1], ctrb_xticks[n-1]]
   fxtick_loc2 = [0, klow-1, kupp-1, n-1]
 
   ax[0].bar(xsetl,setl, color='green', width=0.25)
   ax[0].bar(xseth,seth, color='purple', width=0.25)
-  ax[0].bar(xsetd,setd, color='pink',width=0.25)
+  ax[0].bar(xsetd,setd, color='pink', width=0.25)
   plt.xticks(fxtick_loc2, fctrb_xticks, rotation=0)
   # plt.xticks(x, ctrb_xticks, rotation=0)
   # x_formatter = FixedFormatter(fctrb_xticks)
@@ -595,8 +302,8 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   gs = gridspec.GridSpec(1,1)
   ax = [plt.subplot(gsi) for gsi in gs]
   
-  ax[0].plot(x,results['z'],label=r"$\mathrm{\mathbf{z}}$",marker='o',markersize=0.4,lw=0.25, markevery=fxtick_loc)
-  ax[0].plot(x,results['dz'],label=r"$d\mathrm{\mathbf{z}}$",marker='o',markersize=0.4,lw=0.25, markevery=fxtick_loc)
+  ax[0].plot(x,results['z'],label=r"$\mathsf{values},\,\mathrm{\mathbf{z}}$",marker='o',markersize=0.4,lw=0.25, markevery=fxtick_loc)
+  ax[0].plot(x,results['dz'],label=r"$\mathsf{returns},\,d\mathrm{\mathbf{z}}$",marker='o',markersize=0.4,lw=0.25, markevery=fxtick_loc)
   
   ax[0].axvspan(results['k_low']-1,results['k_upp']-1, facecolor='tab:green', alpha=0.25, linewidth=1)
   
@@ -612,14 +319,14 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   
   
   ax[0].set_xlabel(r"$\mathrm{\mathsf{optimal~population~subsets/combinations}},\mathcal{H}_j$", fontsize=2.5, labelpad=1.5)
-  ax[0].set_ylabel(r"$\mathrm{\mathsf{cummulative~value}, \mathbf{z}}$",  fontsize=2.5, labelpad=1.5)
+  ax[0].set_ylabel(r"$\mathsf{returns},\,d\mathrm{\mathbf{z}}$",  fontsize=2.5, labelpad=1.5)
   
   csts = {'LW':0.25}
   #
   ax[0].xaxis.set_tick_params(labelsize=2,length=1.5, width=csts['LW'],pad=0.5)
   ax[0].yaxis.set_tick_params(labelsize=2.5,length=1.5, width=csts['LW'],pad=0.5)
   ax[0].margins(y=0.05, tight=True)
-  ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=3, fancybox=False, edgecolor='black', frameon=False)
+  ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=2.5, fancybox=False, edgecolor='black', frameon=False)
   plt.tight_layout(pad=0.25)
 
   figpath = f"{PLOT_PATH}/popchoice_sslplot.png"
@@ -709,12 +416,18 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     # SVLISTS['sst'] 
     x = np.arange(1, len(SVLISTS['cost'])+1)
     y = np.array(SVLISTS['sst'])
+    ym = y.mean(axis=1)
+    yse = y.std(axis=1)/np.sqrt(y.shape[1])
     plt.rcParams['axes.linewidth'] = 0.35
     figsz = (0.7, 0.4)
     fig = plt.figure(figsize=figsz,tight_layout=True)
     gs = gridspec.GridSpec(1,1)
     ax = [plt.subplot(gsi) for gsi in gs]
-    ax[0].plot(x,y,linewidth=0.2,marker='+', markersize=0.05)
+    
+    # ax[0].plot(x,y,linewidth=0.2, marker='+', markersize=0.05)
+    ax[0].errorbar(x, ym, yse, alpha=0.99,linewidth=0.2, marker='+', markersize=0.05, ecolor='black', elinewidth=0.05, color=colors[0])
+    ax[0].fill_between(x, (ym-yse), (ym+yse), alpha=0.08, facecolor=colors[0],linewidth=0)
+    
     ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
     ax[0].set_ylabel(r"$\mathrm{\mathsf{\alpha}}_t$", fontsize=3, labelpad=1.5)
     ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
@@ -723,7 +436,7 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     #
     ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
     ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-    ax[0].margins(y=0.05, tight=True)
+    ax[0].margins(y=0.25, tight=True)
 
     plt.tight_layout(pad=0.25)
     figpath = f"{PLOT_PATH}/lrt_curve.png"
@@ -733,12 +446,18 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     # BTi_T 
     x = np.arange(1, len(SVLISTS['cost'])+1)
     y = np.array(SVLISTS['btt'])
+    ym = y.mean(axis=1)
+    yse = y.std(axis=1)/np.sqrt(y.shape[1])
     plt.rcParams['axes.linewidth'] = 0.35
     figsz = (0.7, 0.4)
     fig = plt.figure(figsize=figsz,tight_layout=True)
     gs = gridspec.GridSpec(1,1)
     ax = [plt.subplot(gsi) for gsi in gs]
-    ax[0].plot(x,y,linewidth=0.2, marker='+', markersize=0.05)
+    
+    # ax[0].plot(x,y,linewidth=0.2, marker='+', markersize=0.05)
+    ax[0].errorbar(x, ym, yse, alpha=0.99,linewidth=0.2, marker='+', markersize=0.05, ecolor='black', elinewidth=0.05, color=colors[0])
+    ax[0].fill_between(x, (ym-yse), (ym+yse), alpha=0.08, facecolor=colors[0],linewidth=0)
+    
     ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
     ax[0].set_ylabel(r"$\mathrm{{\beta}}_{i,t}$", fontsize=3, labelpad=1.5)
     ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
@@ -746,23 +465,29 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     #
     ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
     ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-    ax[0].margins(y=0.05, tight=True)
+    ax[0].margins(y=0.25, tight=True)
 
     plt.tight_layout(pad=0.25)
     figpath = f"{PLOT_PATH}/betai_t_curve.png"
     plt.savefig(figpath, dpi=1200)
     plt.close(fig)
-    
+      
   
     # SVLISTS['gt'] 
     x = np.arange(1, len(SVLISTS['cost'])+1)
     y = np.array(SVLISTS['gt'])
+    ym = y.mean(axis=1)
+    yse = y.std(axis=1)/np.sqrt(y.shape[1])
     plt.rcParams['axes.linewidth'] = 0.35
     figsz = (0.7, 0.4)
     fig = plt.figure(figsize=figsz,tight_layout=True)
     gs = gridspec.GridSpec(1,1)
     ax = [plt.subplot(gsi) for gsi in gs]
-    ax[0].plot(x,y,linewidth=0.2)
+    
+    # ax[0].plot(x,y,linewidth=0.2, marker='+', markersize=0.05)
+    ax[0].errorbar(x, ym, yse, alpha=0.99,linewidth=0.2, marker='+', markersize=0.05, ecolor='black', elinewidth=0.05, color=colors[0])
+    ax[0].fill_between(x, (ym-yse), (ym+yse), alpha=0.08, facecolor=colors[0],linewidth=0)
+    
     ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
     ax[0].set_ylabel(r"$\mathrm{\mathsf{G}}_t$", fontsize=3, labelpad=1.5)
     ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
@@ -770,7 +495,7 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     #
     ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
     ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-    ax[0].margins(y=0.05, tight=True)
+    ax[0].margins(y=0.25, tight=True)
 
     plt.tight_layout(pad=0.25)
     figpath = f"{PLOT_PATH}/gradw_t_curve.png"
@@ -781,12 +506,18 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     # SVLISTS['wt'] 
     x = np.arange(0, len(SVLISTS['cost'])+1)
     y = np.array(SVLISTS['wt'])
+    ym = y.mean(axis=1)
+    yse = y.std(axis=1)/np.sqrt(y.shape[1])
     plt.rcParams['axes.linewidth'] = 0.35
     figsz = (0.7, 0.4)
     fig = plt.figure(figsize=figsz,tight_layout=True)
     gs = gridspec.GridSpec(1,1)
     ax = [plt.subplot(gsi) for gsi in gs]
-    ax[0].plot(x,y,linewidth=0.2)
+    
+    # ax[0].plot(x,y,linewidth=0.2, marker='+', markersize=0.05)
+    ax[0].errorbar(x, ym, yse, alpha=0.99,linewidth=0.2, marker='+', markersize=0.05, ecolor='black', elinewidth=0.05, color=colors[0])
+    ax[0].fill_between(x, (ym-yse), (ym+yse), alpha=0.08, facecolor=colors[0],linewidth=0)
+    
     ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
     ax[0].set_ylabel(r"$\mathrm{\mathsf{W}}_t$", fontsize=3, labelpad=1.5)
     ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
@@ -794,7 +525,7 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
     #
     ax[0].xaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
     ax[0].yaxis.set_tick_params(labelsize=1.5,length=1.5, width=csts['LW'],pad=0.5)
-    ax[0].margins(y=0.05, tight=True)
+    ax[0].margins(y=0.25, tight=True)
 
     plt.tight_layout(pad=0.25)
     figpath = f"{PLOT_PATH}/w_t_curve.png"
@@ -812,7 +543,7 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   gs = gridspec.GridSpec(1,1)
   ax = [plt.subplot(gsi) for gsi in gs]
   ax[0].plot(x,y1,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_2$")
-  # ax[0].plot(x,y2,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_1$")
+  ax[0].plot(x,y2,linewidth=0.2,label=r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert_1$")
   ax[0].set_xlabel(r"$\mathrm{\mathsf{iterations}},t$", fontsize=3, labelpad=0.5)
   ax[0].set_ylabel(r"$\Vert\mathrm{\mathsf{c}}_t-\mathrm{\mathsf{c}}^\star\Vert$", fontsize=2, labelpad=1.5)
   ax[0].xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
@@ -827,7 +558,3 @@ def web_render_results(PLOT_PATH,n,results,SVLISTS, skip_heavy_plots=True):
   figpath = f"{PLOT_PATH}/normctrbrel_curve.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)  
-
-
-
-

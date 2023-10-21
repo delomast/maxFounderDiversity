@@ -76,23 +76,22 @@ class LPF():
         out_k : output at current time, t
         x : updated state for next time, t+1
         '''
-        return out_k, x, gamma_t
+        return out_k, x
 
 
 '''
 ASGM
-PyTorch Backend.
 '''
 class aSGM():
     ''' Gradient Method: automatic algorithm for learning/control/estimation
 
-    Core algorithm implementation (Torch)
+    Main algorithm implementation (Torch)
     '''
     def __init__(self, auto:bool, mode:int, lpf:LPF,
                 betas:tuple, ss_inits:Tensor, eps:Tensor, steps_per_epoch:int, maximize:bool) -> None:
         self.lpf = lpf
         self.auto = auto
-        self.mode = mode
+        self.mode = mode #redundant
         self.maximize = maximize
         self.eps = eps
         self.device = eps.device
@@ -100,9 +99,6 @@ class aSGM():
         self.beta_out = betas[1]
         self.beta_diff = betas[2]
         self.ss_inits = ss_inits
-        self.f_low = eps 
-        self.f_one = torch.tensor(1., dtype=torch.float, device=eps.device)
-        self.f_high = torch.tensor(0.99999, dtype=torch.float32, device=eps.device)
         self.est_numels = 0
         self.spe = steps_per_epoch #number of batches
     
@@ -111,7 +107,7 @@ class aSGM():
         # logging.
         txt = "="
         infostr = "aSGM info:"          
-        strlog = f"{infostr} [auto={self.auto}, inits: lr={self.ss_inits:.5g} | lowpass poles [i,o] : {self.beta_in_init:.4g}, {self.beta_out:.4g} | digital diff. : {self.beta_diff:.4g} ]"
+        strlog = f"{infostr} [auto={self.auto}, inits: step-size={self.ss_inits:.5g} | lowpass poles [i,o] : {self.beta_in_init:.4g}, {self.beta_out:.4g} | digital diff. : {self.beta_diff:.4g} ]"
         # debug  
         print(f"{txt * (len(strlog)) }") 
         # print(f"[p={self.p}]")
@@ -122,9 +118,9 @@ class aSGM():
             
     @torch.no_grad()
     def compute_opt(self,step:Tensor,        
-                A_mat:Tensor, b_vec:Tensor, x_vec:Tensor, c_t_vec:Tensor, param:Tensor, param_grad:Tensor,
+                A_mat:Tensor, b_vec:Tensor, in_t_vec:Tensor, c_t_vec:Tensor, param:Tensor, param_grad:Tensor,
                 q_t:Tensor,w_t:Tensor,g_k:Tensor,
-                m_t:Tensor,d_t:Tensor, gbar_t:Tensor, gamma_t:Tensor,ss_t:Tensor,
+                m_t:Tensor,d_t:Tensor, gbar_t:Tensor,ss_t:Tensor,
                 beta_out_t:Tensor,beta_in_t:Tensor
                 ):
         
@@ -132,7 +128,7 @@ class aSGM():
         # -2. gain fcn. (prop.+deriv.) 
         # -3. output param. update. (integ.)
         
-        x_mat = x_vec.mm(x_vec.T)
+        in_t_mat = in_t_vec.mm(in_t_vec.T)
         c_t_mat = c_t_vec.mm(c_t_vec.T)
 
         # input g_t, err = -g_t
@@ -145,26 +141,28 @@ class aSGM():
             pd_t = g_t + self.beta_diff*(g_t-g_k)
         else: pd_t = 1*g_t
         
-        # set pole of input lowpass filter
+        # vary pole beta_in_t of input lowpass filter (mode: 1)
         if self.auto and step > 1:
-            # mode 1
-            beta_new = ((pd_t.T.mm(g_t-gbar_t)).div_((m_t.T.mm(gbar_t)).add_(self.eps)))
-            # mode 2
-            # beta_new = (((d.T.mm(g_t-gbar_t)).add_(self.eps)).div_(((d.T.mm(g_t-gbar_t))+(m_t.T.mm(gbar_t))).add_(self.eps)))
-            beta_in_t.copy_(beta_new*gamma_t)
+            bxn = pd_t.T.mm(g_t-gbar_t)
+            bxd = m_t.T.mm(gbar_t)
+            # bxd = m_t.T.mm(gbar_t-g_t)
+            
+            bxn.div_((bxn + bxd).add_(self.eps))   
+            # same as:         
+            # bxn.div_(bxd.add_(self.eps))
+            # bxn.div_(1+bxn)
+            beta_in_t.copy_(bxn.abs_())
 
         # on input: smoothing    
         # Low-pass Filter (1st order)
-        v_t, m_t, gam_t = self.lpf.torch_ew_compute(in_t=pd_t, x=m_t, beta=beta_in_t, step=step)
+        v_t, m_t = self.lpf.torch_ew_compute(in_t=pd_t, x=m_t, beta=beta_in_t, step=step)
 
         g_k.copy_(g_t)
-        d_t.copy_(pd_t)
-        if step > 1: gamma_t.copy_(gam_t)
-        
-        # - optimal propotional gain (step-size): for lin model + quad. opt.
+        d_t.copy_(pd_t)        
+        # - optimal step-size (propotional gain ): for lin model + quad. opt.
         if self.auto:
-            e_gt=A_mat.mm(w_t.mm(c_t_mat-x_mat)) - 1*b_vec.mm(c_t_vec.T-x_vec.T)
-            gbar_t.copy_(g_t + e_gt)
+            # e_gt = (A_mat.mm(w_t.mm(c_t_mat-in_t_mat)) - 1*b_vec.mm(c_t_vec.T-in_t_vec.T))
+            gbar_t.copy_(g_t + (A_mat.mm(w_t.mm(c_t_mat-in_t_mat)) - b_vec.mm(c_t_vec.T-in_t_vec.T)))
             Avcc = (A_mat.mm(v_t)).mm(c_t_mat)
             alpha_t = ((v_t.T.mm(gbar_t))).div_((v_t.T.mm(Avcc)).add_(self.eps))
         else:
@@ -172,12 +170,12 @@ class aSGM():
             alpha_t = self.ss_inits
         
         # out: update parameter w_t: by integrating P-D component
-        w_t.sub_(v_t.mul_(alpha_t))
+        w_t.add_(v_t.neg_().mul_(alpha_t))
                 
             
         # optional: Et[w] output smoothing 
         if beta_out_t > 0:
-            param_est, q_t, _ = self.lpf.torch_ew_compute(in_t=w_t, x=q_t,beta=beta_out_t, step=step, mode=2)
+            param_est, q_t = self.lpf.torch_ew_compute(in_t=w_t, x=q_t,beta=beta_out_t, step=step, mode=2)
         else: param_est = 1*w_t
 
         # pass param est. values to network's parameter placeholder.
@@ -192,68 +190,79 @@ PyTorch Frontend.
 '''                     
 class AutoSGMQuad(Optimizer):
 
-    """Implements: AutoSGM (Linear Layer) learning algorithm.
+    """Front-end implementation: AutoSGM learning algorithm for a Self-supervised Neural network with a Quadratic cost function.
     
-    The automatic SGM "Stochastic" Gradient Method is a discrete-time PID structure, with lowpass regularizing components.
+    AutoSGM: Automatic (Stochastic) Gradient Method. ```output = AutoSGM{input}```
+    Expects a first-order gradient as input. 
+    output is an estimate of each parameter in an (artificial) neural network. 
     
-    PID structure is a discrete-time structure with Proportional + Integral + Derivative components
+    ```
+    input <- Et{Dt{-g}} or Dt{Et{-g}}
+    state <-  It{state,input,alpha_t} := state + alpha_t*input
+    output <- Et{state}
+    ```
     
-    The Bayes optimal proportional gain (or step-size) component contains the effective step-size (or learning rate) which represents a linear correlation variable; and a variance estimation component (or normalizing component)
+    From an automatic control perspective, AutoSGM is an accelerated learning framework that has: 
     
-    The derivative gain component is a digital differentiator, that is most always sensitive to noise, so it is usually turned off.
+        + an active lowpass filtering component 'Et' regularizing its input. 
+        
+        + optional time-derivative 'Dt' component. 
+        
+        + a proportional component 'alpha_t'.
+        
+        + a time-integral 'It' component. 
+        
+        + optional lowpass filtering component 'Et' at its output.
     
-    The integral component is the digital integrator, which does parameter updates or adaptation using the first-order gradient of a scalar-valued objective-function.
+    Basic signal-processing: 
     
-    Author: OAS
+        + the time-derivative component is most always sensitive to input noise, so should usually be turned off.
+        
+        + the lowpass filtering 'Et' component at the output adds unnecessary delay to output estimates, so should usually be turned off.
+    
+    Author: Oluwasegun Ayokunle Somefun
         
     Date: (Changes)
 
-        2023. July. (init. code.)
+        2023. Oct.
 
     Args:
-        params(iterable, required): iterable of parameters to optimize or dicts defining parameter groups
+        params(iterable, required): iterable data-structure of parameters to optimize or dicts defining parameter groups
         
-        auto (bool, optional, default: True) Bayes optimal step-size (full proportional gain) or Bayes optimal learning rate (a linear correlation estimate) in (0, 1)
+        auto (bool, optional, default: True) optimal step-size for ssl quadfcn model.
         
-        mode (int, optional, default: 1) switches between many possible implementations of AutoSGM (not yet implemented.)
+        mode (int, optional, default: 1) switches between many possible implementations of AutoSGM (currently unused).
         
-        steps_per_epoch (int, required): iterations per epoch or number of minibatches >= 1 (default: 1)
+        steps_per_epoch (int, optional): iterations per epoch or number of minibatches >= 1 (default: 1 means one mini-batch).
 
-        ss_init (float, optional, default=1e-3): If auto=True, then this initializes the state of the lowpass filter used for computing the learning rate. If auto=False, then this is a fixed learning rate;
+        ss_init (float, optional, default=1e-1): If auto=False, then this value is used.
 
-        beta_in_smooth (float, optional, default = 0.9): for input smoothing. lowpass filter pole in (0, 1).   
+        beta_in_smooth (float, optional, default = 0.9): for input smoothing. lowpass filter pole in (0, 1). If auto=False, then this value is used.   
         
-        beta_out (float, optional, default = 0): for output averaging. lowpass filter pole in (0, 1).
+        beta_out (float, optional, default = 0): for output averaging. lowpass filter pole in (0, 1). should be left to its default, in most cases.
 
-        beta_diff (float, optional, default=0): for digital differentiation, should be left to its default, in most cases.
+        beta_diff (float, optional, default=0): for time-differentiation. should be left to its default, in most cases.
         
-        maximize (bool, optional, default: False): maximize the params based on the objective, instead of minimizing
+        eps (float, optional, default=1e-15): arbitrary number used to prevent floating-point division by zero.
+        
+        maximize (bool, optional, default: False): if True, searches for params that maximize the objective function in the neural network params, instead of minimizing it.
 
-        usecuda (bool, optional, default: False): set to True, if your machine is cuda enabled or if you want to use cuda.
+        usecuda (bool, optional, default: False): set to True, if your machine is cuda enabled or if you want to use Nvidia's cuda.
         
-        .. AutoSGM: Automatic (Stochastic) Gradient Method _somefuno@oregonstate.edu
+        .. AutoSGMQuad: Automatic (Stochastic) Gradient Method _somefuno@oregonstate.edu
 
     Example:
-        >>> from asgmlin  import AutoSGMQuad
-        >>> ...
-        
+        >>> from asgm_quad  import AutoSGMQuad
+        >>> ...        
         >>> optimizer = AutoSGMQuad(model.parameters())
-        
-        >>> optimizer = AutoSGMQuad(model.parameters(), auto=False) 
-        
-        >>> optimizer = AutoSGMQuad(model.parameters(), usecuda=True)
-        
-        >>> optimizer = AutoSGMQuad(model.parameters(), beta_in_smooth=0.9, beta_out=0.)
-
-        >>> optimizer = AutoSGM(model.parameters(), auto=False, ss_init=1e-3)
-        
         >>> ...
         >>> optimizer.zero_grad()
-        >>> loss_fn(model(input), target).backward()
-        >>> optimizer.step
+        >>> # expects a cost_fcn defined as: cost_fcn = 0.5*x'Ax - b'x  + c
+        >>> cost_fcn(model(input), target).backward()
+        >>> optimizer.step(model.A,model.b,model.input,model.output)
     """
     # 
-    def __init__(self, params, *, steps_per_epoch=1, ss_init=1e-1, beta_in_smooth=0.9, beta_out=0, beta_diff=0, eps=1e-8, mode=1, maximize=False, auto=True, usecuda=False):
+    def __init__(self, params, *, steps_per_epoch=1, ss_init=1e-1, beta_in_smooth=0.9, beta_out=0., beta_diff=0., eps=1e-15, mode=1, maximize=False, auto=True, usecuda=False):
 
         if not 0.0 <= ss_init:
             raise ValueError(f"Invalid value: ss_init={ss_init} must be in [0,1) for tuning")
@@ -272,18 +281,15 @@ class AutoSGMQuad(Optimizer):
         else: self.device = torch.device('cpu')
             
         # eps added: div. by zero.
-        if usecuda:
-            eps = torch.tensor(eps, dtype=torch.float32, device=self.device)
-        else:
-            eps = torch.tensor(eps, dtype=torch.float32, device=self.device)
+        eps = torch.tensor(eps, dtype=torch.float, device=self.device)
         # effective step-size.
-        ss_init = torch.tensor(ss_init, dtype=torch.float32, device=self.device)
+        ss_init = torch.tensor(ss_init, dtype=torch.float, device=self.device)
         
         # compute: one-pole filter gain
-        beta_in_smooth = torch.tensor(beta_in_smooth, dtype=torch.float32, device=self.device)
-        beta_out = torch.tensor(beta_out, dtype=torch.float32, device=self.device)  
+        beta_in_smooth = torch.tensor(beta_in_smooth, dtype=torch.float, device=self.device)
+        beta_out = torch.tensor(beta_out, dtype=torch.float, device=self.device)  
         #
-        beta_diff = torch.tensor(beta_diff, dtype=torch.float32, device=self.device)
+        beta_diff = torch.tensor(beta_diff, dtype=torch.float, device=self.device)
 
         betas = (beta_in_smooth, beta_out, beta_diff)
         
@@ -304,7 +310,7 @@ class AutoSGMQuad(Optimizer):
     
     @torch.no_grad()
     # @_use_grad_for_differentiable
-    def step(self,  A_mat:Tensor, b_vec:Tensor, cx_vec:Tensor, cc_t_vec:Tensor,gradin:Tensor=None, closure=None):
+    def step(self,  A_mat:Tensor, b_vec:Tensor, in_vec:Tensor, out_vec:Tensor,closure=None):
         """Performs a single optimization step.
 
         Args:
@@ -327,14 +333,14 @@ class AutoSGMQuad(Optimizer):
             # list of parameters, gradients, inputs to parameter's layer
             params_with_grad = []
             grads = []
-            x_vec = []
+            in_t_vec = []
             c_t_vec = []
             # list to hold step count
             state_steps = []
 
             # lists to hold previous state memory
             w_t, ss_t = [],[]
-            q_t, m_t, g_k, d_t, gbar_t, gamma_t = [],[],[],[],[],[]
+            q_t, m_t, g_k, d_t, gbar_t = [],[],[],[],[]
             beta_out_t, beta_in_t = [],[]
                         
             p = group['params'][0]
@@ -352,8 +358,8 @@ class AutoSGMQuad(Optimizer):
                 # grads.append(gradin)
                 
                 # get its input
-                c_t_vec.append(cc_t_vec)
-                x_vec.append(cx_vec)
+                c_t_vec.append(out_vec)
+                in_t_vec.append(in_vec)
 
                 state = self.state[p]
                 # initialize state, if empty
@@ -366,7 +372,7 @@ class AutoSGMQuad(Optimizer):
                     state['w'] = p.clone(memory_format=torch.preserve_format).detach()   
                     # filter state 
                     state['q'] = p.clone(memory_format=torch.preserve_format).detach() 
-                    state['beta_out'] = group['betas'][1]*torch.ones((1,), dtype=torch.float32, device=self.device)  
+                    state['beta_out'] = group['betas'][1]*torch.ones((1,), dtype=torch.float, device=self.device)  
                     
                     # -in
                     # gradient state
@@ -379,9 +385,7 @@ class AutoSGMQuad(Optimizer):
                         p, memory_format=torch.preserve_format, device=self.device)      
                     state['gbar'] = torch.zeros_like(
                         p, memory_format=torch.preserve_format, device=self.device)                 
-                    state['gam'] = torch.ones_like(
-                        p, memory_format=torch.preserve_format, device=self.device)
-                    state['beta_in'] = group['betas'][0]*torch.ones_like(p, dtype=torch.float32, device=self.device)
+                    state['beta_in'] = group['betas'][0]*torch.ones_like(p, dtype=torch.float, device=self.device)
 
                     #-for logging step-size or learning rate
                     state[f"lr"] = group["ss_inits"]*torch.ones_like(p, memory_format=torch.preserve_format, device=self.device)
@@ -394,7 +398,6 @@ class AutoSGMQuad(Optimizer):
                 m_t.append(state['m'])
                 d_t.append(state['d']) 
                 gbar_t.append(state['gbar'])
-                gamma_t.append(state['gam'])
                 ss_t.append(state['lr'])
                 
                 # update the step count by 1.
@@ -405,9 +408,9 @@ class AutoSGMQuad(Optimizer):
 
             # Actual Learning Event: 
             
-            control_event(asgm, A_mat, b_vec, x_vec, c_t_vec, 
+            control_event(asgm, A_mat, b_vec, in_t_vec, c_t_vec, 
                 params_with_grad, grads,
-                w_t, q_t, g_k, m_t, d_t, gbar_t, gamma_t, ss_t,
+                w_t, q_t, g_k, m_t, d_t, gbar_t, ss_t,
                 beta_out_t, beta_in_t,
                 state_steps
             )
@@ -420,11 +423,10 @@ One step/iteration
 '''
 @torch.no_grad()
 def control_event(asgm:aSGM, A_mat:Tensor, b_vec:Tensor, 
-                  x_vec:List[Tensor], c_t_vec:List[Tensor], 
+                  in_t_vec:List[Tensor], c_t_vec:List[Tensor], 
         params: List[Tensor], grads: List[Tensor], 
         wk: List[Tensor], qk: List[Tensor], g_k: List[Tensor], 
-        mk: List[Tensor], dk: List[Tensor], gbark: List[Tensor], sk: List[Tensor], lrk: List[Tensor],
-        beta_out_k: List[Tensor], beta_in_k: List[Tensor], state_steps: List[Tensor]):
+        mk: List[Tensor], dk: List[Tensor], gbark: List[Tensor], lrk: List[Tensor], beta_out_k: List[Tensor], beta_in_k: List[Tensor], state_steps: List[Tensor]):
     
     r'''Functional API that computes the AutoSGMQuad control/learning algorithm for each parameter in the model.
 
@@ -432,11 +434,7 @@ def control_event(asgm:aSGM, A_mat:Tensor, b_vec:Tensor,
     '''
     step = state_steps[0][0]
     
-    #- At each step, adapt parameters (weights of the neural network)
-    # in <- Dt{Et{-g}} or Et{Dt{-g}} 
-    # state <- state + alphap*in
-    # out <- Et{state}
-    
+    # At each step, adapt parameters (weights of the neural network)
     # UPDATE MAIN PARAMETER ESTIMATES.
     for i, param in enumerate(params):
         
@@ -446,9 +444,9 @@ def control_event(asgm:aSGM, A_mat:Tensor, b_vec:Tensor,
         
         asgm.compute_opt(
                         step,
-                        A_mat,b_vec,x_vec[i],c_t_vec[i],  
+                        A_mat,b_vec,in_t_vec[i],c_t_vec[i],  
                         param,grads[i],
-                        qk[i],wk[i],g_k[i],mk[i],dk[i],gbark[i],sk[i],lrk[i],
+                        qk[i],wk[i],g_k[i],mk[i],dk[i],gbark[i],lrk[i],
                         beta_out_k[i], beta_in_k[i]
                     )
     
