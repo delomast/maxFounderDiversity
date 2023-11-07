@@ -39,6 +39,7 @@ if not override:
                       type=str2bool, default=True)
   parser.add_argument("-c", "--MAXSTEPS", help="upper limit on the total number of learning iterations (int)", type=int, default=100)
   parser.add_argument("-m", "--NO_MAXSTEPS", help="don't max-out the total number of learning iterations (bool)", type=str2bool, default=True)
+  parser.add_argument("--noPlots", help="return text output insted of plots and .json (saves time)", action=argparse.BooleanOptionalAction) # requires python 3.9+
 
   group = parser.add_mutually_exclusive_group(required=True)
   group.add_argument("--files", 
@@ -61,6 +62,7 @@ if not override:
   cfgs["USE_CORR"] = args.scaler
   cfgs["NO_MAXSTEPS"] = args.NO_MAXSTEPS
   cfgs["MAXSTEPS"] = args.MAXSTEPS
+  cfgs["noPlots"] = args.noPlots
 
   print(args)
 else: 
@@ -213,7 +215,13 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
     # Print out ...
     print(f"loss:{loss}")  
     ''' PLOTS. ''' 
-    web_render_results(PLOT_PATH, n, results, SVLISTS, skip_heavy_plots=False)
+    if cfgs["noPlots"]:
+      with open(f"{PLOT_PATH}/contributions.txt", "w") as out_file:
+        out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
+        for i in range(0, len(results["c_star"])):
+          out_file.write("\t".join([str(results["pop_sort_idxs"][i]), str(results["c_star"][i])]) + "\n")
+    else:
+      web_render_results(PLOT_PATH, n, results, SVLISTS, skip_heavy_plots=False)
     
   return PLOT_PATH
   
@@ -223,5 +231,5 @@ PLOT_PATH = run_cmd_ssl(cfgs,POP_FILES, ismatrix)
 
 print('Done!')
 dir_list = os.listdir(PLOT_PATH)
-print("Saved Decision Plots to\n'",PLOT_PATH,"'\n")
+print("Saved Decision Plots or text output to\n'",PLOT_PATH,"'\n")
 for dir_file in dir_list: print(dir_file) 
