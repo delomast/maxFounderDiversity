@@ -6,12 +6,12 @@
 <!-- <picture> -->
   <!-- <source style="mix-blend-mode: luminosity; width=100px;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
   <source style="mix-blend-mode: luminosity; width=100px;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png"> -->
-<img style="mix-blend-mode: luminosity; width=100px !important;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
+<img style="mix-blend-mode: luminosity; width=100;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
 <!-- </picture> -->
 <!-- <picture> -->
   <!-- <source style="mix-blend-mode: luminosity; width=0.5;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
   <source style="mix-blend-mode: luminosity; width=0.5;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png"> -->
-<img style="mix-blend-mode: luminosity; width=0.5;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
+<img style="mix-blend-mode: luminosity; width=100;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
 <!-- </picture> -->
 
 
