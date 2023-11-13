@@ -5,9 +5,9 @@
 
 <p align="center">
 <picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png" width="350">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png" width="250">
-  <img style="mix-blend-mode: luminosity;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png" width="350">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png" width="280">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png" width="280">
+  <img style="mix-blend-mode: luminosity;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png" width="280">
 </picture>
 <!-- <br clear="left"/> -->
 <!-- <br clear="right"/> -->
