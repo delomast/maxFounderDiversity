@@ -160,6 +160,7 @@ if not override:
   cfgs["NO_MAXSTEPS"] = args.NO_MAXSTEPS
   cfgs["MAXSTEPS"] = args.MAXSTEPS
   cfgs["noPlots"] = args.noPlots
+  cfgs["noPlots"] = args.noPlots
 
   print(args)
 else: 
