@@ -19,7 +19,7 @@
 </picture>
 </p>
 
-A self-supervised neural network algorithm for automatically choosing (or ranking) which populations $s_j$ out of a given $n>1$ populations should we sample broodstock from and in what relative proportions $\mathbf{c}^\star$, inorder to maximize genetic diversity (or minimize co-ancenstry) in an offspring population. 
+A self-supervised neural network algorithm for automatically choosing (or ranking) which populations $s_j$ out of a given $n>1$ populations should we sample broodstock from and in what relative proportions $\mathbf{c}^\star$, inorder to maximize genetic diversity (or minimize co-ancenstry) with the least diminishing returns in an offspring population. 
 
 Input data is either a *set of populations that could be sampled from (with known allele frequencies at a common set of loci)*, or a *co-ancestry matrix*. The recommended $k$ number out of $n$ populations to combine are given in the set $\mathcal{H}_k\subseteq\mathcal{H}^\star$.
 
