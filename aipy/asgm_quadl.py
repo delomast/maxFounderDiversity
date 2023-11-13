@@ -118,7 +118,7 @@ class aSGM():
             
     @torch.no_grad()
     def compute_opt(self,step:Tensor,        
-                A_mat:Tensor, b_vec:Tensor, in_t_vec:Tensor, c_t_vec:Tensor, param:Tensor, param_grad:Tensor,
+                A_mat:Tensor, b_vec:Tensor, param:Tensor, param_grad:Tensor,
                 q_t:Tensor,w_t:Tensor,g_k:Tensor,
                 m_t:Tensor,d_t:Tensor, gbar_t:Tensor,ss_t:Tensor,
                 beta_out_t:Tensor,beta_in_t:Tensor
@@ -127,9 +127,6 @@ class aSGM():
         # -1. input grad.          
         # -2. gain fcn. (prop.+deriv.) 
         # -3. output param. update. (integ.)
-        
-        in_t_mat = in_t_vec.mm(in_t_vec.T)
-        c_t_mat = c_t_vec.mm(c_t_vec.T)
 
         # input g_t, err = -g_t
         g_t = 1*param_grad
@@ -162,8 +159,8 @@ class aSGM():
         # - optimal step-size (propotional gain ): for lin model + quad. opt.
         if self.auto:
             # e_gt = (A_mat.mm(w_t.mm(c_t_mat-in_t_mat)) - b_vec.mm(c_t_vec.T-in_t_vec.T))
-            gbar_t.copy_(g_t + (A_mat.mm(w_t.mm(c_t_mat-in_t_mat)) - b_vec.mm(c_t_vec.T-in_t_vec.T)))
-            Avcc = (A_mat.mm(v_t)).mm(c_t_mat)
+            gbar_t.copy_(g_t)
+            Avcc = (A_mat.mm(v_t))
             alpha_t = ((v_t.T.mm(gbar_t))).div_((v_t.T.mm(Avcc)).add_(self.eps))
         else:
             # use externally supplied linear correlation estimate 
@@ -310,7 +307,7 @@ class AutoSGMQuad(Optimizer):
     
     @torch.no_grad()
     # @_use_grad_for_differentiable
-    def step(self,  A_mat:Tensor, b_vec:Tensor, in_vec:Tensor, out_vec:Tensor,closure=None):
+    def step(self,  A_mat:Tensor, b_vec:Tensor, closure=None):
         """Performs a single optimization step.
 
         Args:
@@ -333,8 +330,6 @@ class AutoSGMQuad(Optimizer):
             # list of parameters, gradients, inputs to parameter's layer
             params_with_grad = []
             grads = []
-            in_t_vec = []
-            c_t_vec = []
             # list to hold step count
             state_steps = []
 
@@ -356,10 +351,6 @@ class AutoSGMQuad(Optimizer):
                 # get its gradient
                 grads.append(p.grad)
                 # grads.append(gradin)
-                
-                # get its input
-                c_t_vec.append(out_vec)
-                in_t_vec.append(in_vec)
 
                 state = self.state[p]
                 # initialize state, if empty
@@ -408,7 +399,7 @@ class AutoSGMQuad(Optimizer):
 
             # Actual Learning Event: 
             
-            control_event(asgm, A_mat, b_vec, in_t_vec, c_t_vec, 
+            control_event(asgm, A_mat, b_vec, 
                 params_with_grad, grads,
                 w_t, q_t, g_k, m_t, d_t, gbar_t, ss_t,
                 beta_out_t, beta_in_t,
@@ -423,7 +414,6 @@ One step/iteration
 '''
 @torch.no_grad()
 def control_event(asgm:aSGM, A_mat:Tensor, b_vec:Tensor, 
-                  in_t_vec:List[Tensor], c_t_vec:List[Tensor], 
         params: List[Tensor], grads: List[Tensor], 
         wk: List[Tensor], qk: List[Tensor], g_k: List[Tensor], 
         mk: List[Tensor], dk: List[Tensor], gbark: List[Tensor], lrk: List[Tensor], beta_out_k: List[Tensor], beta_in_k: List[Tensor], state_steps: List[Tensor]):
@@ -438,13 +428,13 @@ def control_event(asgm:aSGM, A_mat:Tensor, b_vec:Tensor,
     # UPDATE MAIN PARAMETER ESTIMATES.
     for i, param in enumerate(params):
         
-        # if step == 1:         
-        #     if i == 0: asgm.est_numels = param.nelement()
-        #     else: asgm.est_numels += param.nelement()   
+        if step == 1:         
+            if i == 0: asgm.est_numels = param.nelement()
+            else: asgm.est_numels += param.nelement()   
         
         asgm.compute_opt(
                         step,
-                        A_mat,b_vec,in_t_vec[i],c_t_vec[i],  
+                        A_mat,b_vec, 
                         param,grads[i],
                         qk[i],wk[i],g_k[i],mk[i],dk[i],gbark[i],lrk[i],
                         beta_out_k[i], beta_in_k[i]

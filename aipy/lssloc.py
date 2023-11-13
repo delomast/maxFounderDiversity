@@ -2,7 +2,7 @@ import os,sys, shutil, random, copy
 from pathlib import Path
 
 import math
-# import numpy as np
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -39,20 +39,23 @@ class QSSLNet(nn.Module):
     super().__init__()
     self.in_dim = in_dim
     self.out_dim = out_dim
+    ones_vec = torch.ones((out_dim,1), dtype=torch.float)
     
+    # sytem's data matrix and scaling matrix
+    self.register_buffer("A",torch.empty((out_dim,out_dim), dtype=torch.float))
+    self.register_buffer("M",torch.eye(out_dim, dtype=torch.float))
+            
+    self.register_buffer("eps",torch.tensor(eps,dtype=torch.float))
+
     # input: previous belief
-    self.register_buffer("x",torch.ones((self.in_dim,1), dtype=torch.float32).div(in_dim))
+    self.register_buffer("x",self.csoftmax(ones_vec))
+    # self.register_buffer("x",self.csnorm(ones_vec))
     
     # quadratic cost parameters A, b
     # sum to one constraint
-    ones_vec = torch.ones((out_dim,1), dtype=torch.float32)
     self.register_buffer("ones_vec",ones_vec)
-    self.register_buffer("zeros_vec",0*ones_vec)
+    self.register_buffer("zeros_vec",torch.zeros((out_dim,1), dtype=torch.float))
     self.register_buffer("b",ones_vec)
-    
-    # sytem's data matrix and scaling matrix
-    self.register_buffer("A",torch.empty((out_dim,out_dim), dtype=torch.float32))
-    self.register_buffer("M",torch.eye(out_dim, dtype=torch.float32))
     
     # model's parameters:
     # linear layer
@@ -60,11 +63,8 @@ class QSSLNet(nn.Module):
     self.Lin_W = Linear(self.weight_W)
     self.learnerW = None
     
-    self.register_buffer("eps",torch.tensor(eps,dtype=torch.float32))
     
-    self.last_cost = torch.tensor(torch.inf, dtype=torch.float32)
-    self.last_cost_noc = torch.tensor(torch.inf, dtype=torch.float32)
-    
+    self.last_cost = torch.tensor(torch.inf, dtype=torch.float)    
         
     @torch.no_grad()
     def weight_reset(m: nn.Module):
@@ -86,6 +86,7 @@ class QSSLNet(nn.Module):
       """
       for p in self.parameters():
           nn.init.normal_(p, std=self.eps)
+
     
   def __repr__(self):
     return f"prior belief vector:={self.x.transpose(0,1)},\nstate weight matrix:={self.weight_W}"
@@ -98,13 +99,6 @@ class QSSLNet(nn.Module):
       self.x = 1*xinp # +/- c_{t-1} works
     y =  self.Lin_W(self.x)  
     return y
-  # def forward(self, inp=None):
-  #   ''' Forward Pass
-  #   '''
-  #   if inp is not None:
-  #     self.x = 1*inp
-      
-  #   return self.Lin_W(self.x)
   
   
   @torch.no_grad()
@@ -122,21 +116,18 @@ class QSSLNet(nn.Module):
     if A.shape[0] != A.shape[1]:
       raise Exception(f"Expected data matrix should be {self.out_dim} x {self.out_dim}")
     
-    b = self.ones_vec+0
-    
+    b = 1*self.ones_vec
+        
     # fix for ~0 value, any semidefiniteness in matrix
     # and small negative entries.
-    if A.abs().min() < 1e-3:
-      # A.add_(1e-1*torch.eye(self.in_dim)) 
-      # A.add_(1e-4)
-      if abs(min(A[A<0].tolist())) < 0.1:
-        A.abs_()
-    
+    if A.abs().min() < 1e-3: A.abs_()
+      # if abs(min(A[A<0].tolist())) < 0.1:
+      
     dd = 1/(torch.diag(A).sqrt())
     # skip normalizing with diagonal, if diag elements are ~ 1
-    if (1 - (dd).mean()).abs() < 0.1: #todo
-      use_corr = False
-      print('.looks like matrix diagonal is already scaled.')
+    if (1 - (dd).mean()).abs() < 0.1: use_corr = False
+      # print('.looks like matrix diagonal is already scaled.')
+      
     if use_corr:
       self.M = torch.diag(dd)
         
@@ -149,14 +140,10 @@ class QSSLNet(nn.Module):
     Quadratic cost function
     '''
     # f = 0.5*y'Ay - b'y  + 1
-    return (0.5*y.T.mm(self.A.mm(y))).sub(((self.b.T.mm(y))-1))
-  
-  # def quadcost_noc(self, y):
-  #   '''
-  #   Quadratic cost function
-  #   '''
-  #   # f = 0.5*y'Ay
-  #   return (0.5*y.T.mm(self.A.mm(y)))
+    # fmin = 1 - 0.5*(y.T.mm(mdl.A.mm(y)))
+    return ((0.5*(y.T.mm(self.A.mm(y)))).sub(((self.b.T.mm(y))-1)))
+    # return (0.5*y.T.mm(self.A.mm(y))).sub(((y.T.mm(y))-1))
+
     
   @torch.no_grad()
   def delta_cost(self, f):
@@ -174,13 +161,17 @@ class QSSLNet(nn.Module):
     '''
     return (self.M.mm(inp)).softmax(dim=0)
 
-    
+  @torch.no_grad()
+  def csnorm(self, inp):
+    ''' The output head of the network.
+    - transforms to the original co-ordinate space with matrix M.
+    - computes output belief vector at iteration t, c_t
+    '''
+    return (self.M.mm(inp)).div(torch.linalg.norm(self.M.mm(inp))+self.eps)
 
       
 
     
-
-
   # def sparsing(self, sparsity, std=0.01):
   #     r"""Fills the 2D input `Tensor` as a sparse matrix, where the
   #     non-zero elements will be drawn from the normal distribution

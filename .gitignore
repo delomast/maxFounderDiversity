@@ -1,4 +1,5 @@
 .venv
+.vscode
 misc
 templates/greeting.html
 templates/simple.html
@@ -9,4 +10,7 @@ __pycache__
 aipy/__pycache__
 datapy/__pycache__
 static/session/*
-static/cmdsession/*
+static/svdirs/cmdsession/*
+*.R
+coAn*.txt
+plot*.pdf

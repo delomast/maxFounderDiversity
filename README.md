@@ -4,13 +4,13 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=red&labelColor=white)
 
 <picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-  <img style="mix-blend-mode: luminosity; width=0.5;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-</picture><picture>
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
-  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
+  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
+</picture><picture>
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
+  <img style="mix-blend-mode: luminosity; width=0.5;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_ssplot.png">
 </picture>
 
 
@@ -18,9 +18,9 @@ A self-supervised neural network algorithm for automatically choosing (or rankin
 
 Input data is either a *set of populations that could be sampled from (with known allele frequencies at a common set of loci)*, or a *co-ancestry matrix*. The recommended $k$ number out of $n$ populations to combine are given in the set $\mathcal{H}_k\subseteq\mathcal{H}^\star$.
 
-Developed with the application of creating base populations for aquaculture breeding programs in mind. In the first poster figure, it can be observed that out of a given $n=25$ populations, a lower bound $k=10$, and an upper bound $k=18$ populations are recommended to minimize co-ancestry with little diminishing returns. This respectively corresponds to a $60\\%$ and $28\\%$ reduction in the number of input populations. This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
+Developed with the application of creating base populations for aquaculture breeding programs in mind. In the first poster figure, it can be observed that out of a given $n=25$ populations, a $k$ in $[4,6]$ populations are recommended to minimize co-ancestry with the least diminishing returns. This respectively corresponds to a $84\\%$ and $76\\%$ reduction in redundancy. This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
 
-The second poster figure, shows the ordered ranking of each of the $25$-population set, by how much they contribute to the variation in the set.
+The second poster figure, shows the ordered ranking of populations by their relative contributions in the $25$-population set.
 
 
 
