@@ -4,13 +4,14 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=red&labelColor=white)
 
 <picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
-  <img style="mix-blend-mode: luminosity;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
-</picture><picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/trainplts/alle_frq_dirs/sthd_af/popchoice_sslplot.png">
-  <img style="mix-blend-mode: luminosity; width=0.5;" alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_ssplot.png">
+  <!-- <source style="mix-blend-mode: luminosity; width=100px;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
+  <source style="mix-blend-mode: luminosity; width=100px;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png"> -->
+  <img style="mix-blend-mode: luminosity; width=100px;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/coan_plot.png">
+</picture>
+<picture>
+  <source style="mix-blend-mode: luminosity; width=0.5;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
+  <source style="mix-blend-mode: luminosity; width=0.5;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
+  <img style="mix-blend-mode: luminosity; width=0.5;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/relctrbs_sslplot.png">
 </picture>
 
 
