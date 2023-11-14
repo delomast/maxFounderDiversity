@@ -125,7 +125,7 @@ def str2bool(s):
     return s == 'True'
   
 override = False # production behaviour.
-override = True # uncomment for testing/debugging.
+# override = True # uncomment for testing/debugging.
 
 if not override:
   parser = argparse.ArgumentParser(description="SSL CLI Tool!")

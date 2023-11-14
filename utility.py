@@ -574,9 +574,10 @@ def plot_coans(CMS, CMU, PLOT_PATH, krec):
   # plt.rcParams.update(plt.rcParamsDefault)
   x = np.arange(1, len(CMS)+1)
   y1 = 1-np.array(CMS)
-  y2 = 1-np.array(CMU)
+  # y2 = 1-np.array(CMU)
+  y2= np.array(CMS)
   plt.rcParams['axes.linewidth'] = 0.35
-  figsz = (0.6, 0.4)
+  figsz = (0.7, 0.4)
   fig = plt.figure(figsize=figsz,tight_layout=True, dpi=1200)
   gs = gridspec.GridSpec(1,1)
   ax = [plt.subplot(gsi) for gsi in gs]
@@ -586,7 +587,7 @@ def plot_coans(CMS, CMU, PLOT_PATH, krec):
   y3 = [el for el in y1[xs[0]-1:xs[-1]]] #todo
 
   # ax[0].plot(x,y1,label=r"$\mathsf{learnt}$",linewidth=0.2, marker=',', markersize=0.1, markevery=0.2)
-  # ax[0].plot(x,y2,label=r"$\mathsf{uniform}$",linewidth=0.1, marker=',', markersize=0.1, markevery=0.2, linestyle="dashed")
+  # ax[0].plot(x,y2,label=r"$\mathsf{uniform}}$",linewidth=0.1, marker=',', markersize=0.1, markevery=0.2, linestyle="dashed")
   ax[0].plot(x,y1,linewidth=0.2, marker=',', markersize=0.1, markevery=0.2)
   ax[0].plot(xs,y3,label=r"$\mathcal{H}^\star$",linewidth=0.1, marker='x',  markersize=0.1)
   
@@ -602,8 +603,18 @@ def plot_coans(CMS, CMU, PLOT_PATH, krec):
   ax[0].xaxis.set_tick_params(labelsize=1.25,length=1.5, width=csts['LW'],pad=0.5)
   ax[0].yaxis.set_tick_params(labelsize=1.25,length=1.5, width=csts['LW'],pad=0.5)
   ax[0].margins(y=0.1, tight=True)
+  
+  ax2 = ax[0].twinx()  # instantiate a second axes that shares the same x-axis
+  color = "dimgray"
+  ax2.set_ylabel(r"$\mathsf{average~coancestry}$", fontsize=1.5, labelpad=1.5, color=color)
+  ax2.plot(x, y2, color=color,linewidth=0.1, linestyle="dashed", markersize=0.1, markevery=0.2)
+  ax2.yaxis.set_tick_params(labelsize=1.25,length=1.5, width=csts['LW'],pad=0.5, labelcolor=color)
+  ax2.margins(y=0.1, tight=True)
+  
+  
   ax[0].legend( loc='best', ncols=1, borderaxespad=0.,fontsize=1.25, fancybox=False, edgecolor='black', frameon=False)
-  plt.tight_layout(pad=0.25)
+
+  plt.tight_layout(pad=0.2)
   figpath = f"{PLOT_PATH}/coan_plot.png"
   plt.savefig(figpath, dpi=1200)
   plt.close(fig)
