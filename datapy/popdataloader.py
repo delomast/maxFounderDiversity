@@ -31,8 +31,6 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 import torch.nn as nn
 import torch.nn.functional as tf
 from torch.utils.data import Dataset,DataLoader
-from torchvision import datasets, transforms
-from torchvision.transforms import ToTensor, Lambda
 
 import pandas as pd
 
