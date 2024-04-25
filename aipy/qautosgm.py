@@ -20,7 +20,7 @@ _maximize_doc = r"""maximize (bool, optional): maximize the params based on the
 _email_doc = r"""somefuno@oregonstate.edu"""
 
 
-
+from __future__ import annotations
 from dataclasses import dataclass
 
 import math, torch
@@ -179,7 +179,7 @@ class LPF():
         self.tensor_lists = fused or foreach
 
     @torch.no_grad()
-    def btrng(self, bt:Tensor|float, p:int=1):
+    def btrng(self, bt, p:int=1):
         return (1 - (10**(-p))*(1-bt)) - bt
         
     
