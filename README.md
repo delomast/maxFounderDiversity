@@ -2,29 +2,27 @@
 ## Self-supervised Learning of Optimum Contributions: An Application in Maximizing Genetic Variation
 ![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/ci.yml/badge.svg?event=push)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=red&labelColor=white)
-
-<p align="center">
-<picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
-  <img style="mix-blend-mode: luminosity" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
-</picture>
-<picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="350">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="350">
-  <img style="mix-blend-mode: luminosity;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="350">
-</picture>
-<!-- <br clear="left"/> -->
-<!-- <br clear="right"/> -->
-<!-- <br clear="both"/> -->
-
-</p>
-
 A self-supervised neural network algorithm for automatically choosing (or ranking) which populations $s_j$ out of a given $n>1$ populations should we sample broodstock from and in what relative proportions $\mathbf{c}^\star$, inorder to maximize genetic diversity (or minimize co-ancenstry) with the least diminishing returns in an offspring population. 
 
 Input data is either a *set of populations that could be sampled from (with known allele frequencies at a common set of loci)*, or a *co-ancestry matrix*. The recommended $k$ number out of $n$ populations to combine are given in the set $\mathcal{H}_k\subseteq\mathcal{H}^\star$.
 
+<p align="center">
+<picture>
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="300">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="300">
+  <img style="mix-blend-mode: luminosity" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
+</picture>
+<p>
+
 Developed with the application of creating base populations for aquaculture breeding programs in mind. In the first poster figure, it can be observed that out of a given $n=25$ populations, a $k$ in $[4,6]$ populations are recommended to minimize co-ancestry with the least diminishing returns. This respectively corresponds to a $84\\%$ and $76\\%$ reduction in redundancy. This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
+
+<p align="center">
+<picture>
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="300">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="300">
+  <img style="mix-blend-mode: luminosity;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="300">
+</picture>
+</p>
 
 The second poster figure, shows the ordered ranking of populations by their relative contributions in the $25$-population set.
 
