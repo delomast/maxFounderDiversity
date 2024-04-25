@@ -316,7 +316,7 @@ def rdim_opt(SCRATCH_FOLDER):
 # GLOBAL configs
 # print(Path.cwd())
 SCRATCH_FOLDER = "alle_frq_dirs/test_af"
-SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
+# SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
 k_rec = rdim_opt(SCRATCH_FOLDER)
 
   

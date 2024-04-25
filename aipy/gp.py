@@ -27,7 +27,7 @@ def gp1(args, svlists=None):
         cost_u = mdl.quad_cost_unc(u=mdl.param_u.relu()) # opt.wsmth
         cost_u.backward()
         # - one SGM step and projection
-        opt.step()
+        opt.step(rank=1)
         
         # eval: obj unconstrained
         dcost_u = mdl.delta_cost_u(cost_u.item())

@@ -100,7 +100,7 @@ def reformat_large_tick_values(tick_val, pos=0):
             
     return new_tick_format
   
-def reformat_small_tick_values(tick_val, pos=0):
+def reformat_small_tick_values(tick_val, dp=2, pos=0):
     """
     Formats small tick values
     """
@@ -120,7 +120,7 @@ def reformat_small_tick_values(tick_val, pos=0):
             
         if ise:
             val, sigits = str(tick_val).split(estr)
-            val = round(float(val),1)
+            val = round(float(val),dp)
             rdigits = str(val).split('.')
             if rdigits[-1] == '0':
                 val = rdigits[0]
@@ -139,7 +139,7 @@ def reformat_small_tick_values(tick_val, pos=0):
                 
             if ise:
                 val, sigits = str(tick_val).split(estr)
-                val = round(float(val),1)
+                val = round(float(val),dp)
                 rdigits = str(val).split('.')
                 if rdigits[-1] == '0':
                     val = rdigits[0]
@@ -162,7 +162,7 @@ def reformat_small_tick_values(tick_val, pos=0):
                     sigits = cnt
                     try:
                         digs = len(val)-1
-                        val = round(float(val)/(10**digs),1)
+                        val = round(float(val)/(10**digs),dp)
                         rdigits = str(val).split('.')
                         if rdigits[-1] == '0':
                             val = rdigits[0]
@@ -185,7 +185,7 @@ def reformat_small_tick_values(tick_val, pos=0):
 
 # print(reformat_small_tick_values(1.6055063e-5))
 # print(reformat_small_tick_values(0.000016055))
-# print(reformat_small_tick_values(0.001))
+# print(reformat_small_tick_values(0.001389, 1))
 # print(reformat_small_tick_values(-0.05))
 
 
@@ -320,7 +320,7 @@ def plotrc2(imgs, keys=None, enable_lbl=True):
             
     return fig
 
-def nicefmt3(figh5, ax, csts,name,xlabel=None,ylabel=None, int=False, dpi=1200):
+def nicefmt3(figh5, ax, csts,name,xlabel=None,ylabel=None, dp=2, int=False, dpi=1200):
     ax.xaxis.set_tick_params(labelsize=csts['Fx']-0.5,length=csts['AL'], width=csts['LW'],pad=0.5)
     ax.yaxis.set_tick_params(labelsize=csts['Fy']-0.5,length=csts['AL'], width=csts['LW'],pad=0.5)
     
@@ -329,8 +329,19 @@ def nicefmt3(figh5, ax, csts,name,xlabel=None,ylabel=None, int=False, dpi=1200):
     if ylabel:
         ax.set_ylabel(ylabel, fontsize=csts['Fy'], labelpad=1.5)
 
+    ax.xaxis.set_major_formatter(
+                ticker.FuncFormatter(reformat_large_tick_values))
+    
+    def rfsmt(tck, pos=0):
+        return reformat_small_tick_values(tck,dp,pos)
+
+    # ax.yaxis.set_major_formatter(
+    #             ticker.FuncFormatter(rfsmt))
+    
     if int:
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
+
 
     plt.legend(loc='best', ncol=1, mode="shrink", shadow=False, fancybox=False,frameon=False, borderaxespad=0.,prop={'size':1})
     

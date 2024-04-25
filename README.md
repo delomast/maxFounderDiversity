@@ -29,9 +29,6 @@ Learning of the relative optimum contributions (see figure below) in the $25$-po
 </p>
 
 
-
-
-
 <details>
 <summary>Motivation</summary>
 Diversity of traits in living organisms is controlled by inherited genes. 
@@ -69,6 +66,7 @@ Install required python packages with the requirements.txt file `pip install -r 
 
 #### Quick Test
 A quick way to test the tool. Run: `python ssltest.py` from the main source-code directory.
+Output results are saved in a temporary directory `cmdlogs`.
 
 #### Command Line Interface CLI
 In a terminal window, we provide the command ``sslcmd``. 
@@ -76,7 +74,7 @@ In a terminal window, we provide the command ``sslcmd``.
 Entering ``py sslcmd.py --help`` in the command window returns:
 
 ```
-usage: sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] [-c MAXSTEPS] [-m NO_MAXSTEPS] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)
+usage: sslcmd.py [-h] [-b BATCHSIZE] [-s SCALER] [-c MAXSTEPS] [-m NO_MAXSTEPS] [--noPlots | --no-noPlots] (--files FILES [FILES ...] | --source_dir SOURCE_DIR | --coan_matrix COAN_MATRIX)
 
 SSL CLI Tool!
 
@@ -90,6 +88,8 @@ options:
                         upper limit on the total number of learning iterations (int)
   -m NO_MAXSTEPS, --NO_MAXSTEPS NO_MAXSTEPS
                         don't max-out the total number of learning iterations (bool)
+  --noPlots, --no-noPlots
+                        return text output insted of plots and a .json file (saves time)
   --files FILES [FILES ...]
                         list of source files
   --source_dir SOURCE_DIR
@@ -100,14 +100,15 @@ options:
 #### CLI Examples:
 
 ##### Example 1
-- ``py sslcmd.py --source_dir ./alle_frq_dirs/test_af -b 256``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/test_af' and configures the tool's data loader with a batch-size of 256.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and configures the tool's data loader with a default batch-size of 1.
 
-##### Example 2
-- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af -b 1``
+##### Example 3
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af --noPlots``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and configures the tool's data loader with a batch-size of 1.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and skips making plots.
+
 
 ##### Example 3
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.txt``
@@ -116,12 +117,13 @@ This tells the tool that the allele frequency data files are in a source directo
 
 These each passess in a file (*that can be loaaded with `numpy`*) containing a co-ancestry matrix of n populations to the tool.
 
-#### Web Frontend
+<!-- #### Web Frontend
 In a terminal, run: 
 `
 flask --app sslview --debug run --host=0.0.0.0  
 `
-to access the tool in form of a user-friendly web application.
+to access the tool in form of a user-friendly web application. -->
+<!-- 
 <details>
   <summary> Quick Start (Web Frontend) </summary>
   <div>
@@ -142,7 +144,7 @@ to access the tool in form of a user-friendly web application.
 Each line of the $n$ input files should have the same chromosome name and position for all populations. We adopt this particular format of input file, since it can be easily generated from common genotype file formats with existing, widely used software.
   
 </div>
-</details>
+</details> -->
 
 #### Acknowledgments
 USDA-ARS AI-COE/SCINet Graduate Research Fellowship/Internship. 2023.
