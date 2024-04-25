@@ -2,7 +2,7 @@ import os,sys, shutil,glob,time,random,copy,math
 
 from pathlib import Path
 
-from rmbin.utility import *
+from plotutils import *
 
 
 from aipy.mdls import ILinear

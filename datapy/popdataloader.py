@@ -37,7 +37,7 @@ from torchvision.transforms import ToTensor, Lambda
 import pandas as pd
 
 
-from aipy.asgm_quad import LPF
+from aipy.qautosgm import LPF
 
 
 class PopDatasetStreamerLoader(): 
@@ -187,7 +187,7 @@ class PopDatasetStreamerLoader():
                     # He_Smat_l = 0.5*(1-Ho_Smat_l)
                     
                     self.line_cnt += 1    
-                    _, self.Ho_mat = self.stable_avgfcn.torch_ew_compute(
+                    _, self.Ho_mat = self.stable_avgfcn.compute(
                         in_t=Ho_Smat_l, x=self.Ho_mat, beta=self.BETA, 
                         step=self.line_cnt, mode=self.avgmode
                     )

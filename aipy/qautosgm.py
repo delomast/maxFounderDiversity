@@ -166,9 +166,6 @@ class LPF():
             elif mode == 3: # exponential. (stable if 0 \le \beta < 1) k \to infty
                 # instead of mode=4, use if init x_t is likely not 0
                 # forward:
-                if t == 1: 
-                    beta_t = 0
-                    one_minus_beta_t = 1
                 (x.mul_(beta_t)).add_((one_minus_beta_t)*in_t)
                 out_t = 1*x      
                     

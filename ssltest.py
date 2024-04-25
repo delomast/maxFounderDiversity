@@ -13,7 +13,7 @@ import pandas as pd
 
 import operator
 from datapy.popdataloader import PopDatasetStreamerLoader
-from aipy.direct_quad import edingetal_sel, unc_sel
+from aipy.eding import edingetal_sel
 
 from aipy.gp import gp1
 from aipy.ext import extsolv
@@ -189,19 +189,19 @@ def rdim_opt(SCRATCH_FOLDER):
   plt.savefig(figpath, dpi=dpi)
   plt.close(fig)
 
-  print('\n**PRE**')
-  y_opt_uc, y_opt, lmda_opt, cf = unc_sel(args.A, args.use_cuda, args.use_corr, args.max_steps, args.no_maxsteps, args.err_opt_acc)
-  print(lmda_opt.item())
-  summ2=summarydict(args, y_opt)
-  print(f"loss:{cf}")
-  print(f"avg. kinship: {summ2['coan'].item()}")
+  # print('\n**PRE**')
+  # y_opt_uc, y_opt, lmda_opt, cf = unc_sel(args.A, args.use_cuda, args.use_corr, args.max_steps, args.no_maxsteps, args.err_opt_acc)
+  # print(lmda_opt.item())
+  # summ2=summarydict(args, y_opt)
+  # print(f"loss:{cf}")
+  # print(f"avg. kinship: {summ2['coan'].item()}")
 
 
   # Optimum Contribution Lists
   print('gp1')
   print(trunc(mdl_gp1.tf().detach().numpy(),5).T.tolist()[0])
-  print('mdlo.y')
-  print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
+  # print('mdlo.y')
+  # print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
   print('cvx')
   print(trunc(np.where(np.array(sol['x']) < 1e-5, 0, np.array(sol['x'])),5).T.tolist()[0])
   print('sl')
@@ -214,75 +214,75 @@ def rdim_opt(SCRATCH_FOLDER):
   # print("End epoch.")
   ''' 1 EPOCH END.'''
 
-  # view diminishing returns
+  # # view diminishing returns
 
-  atids = summ1['csel_ids'][:1]
-  Ak = 0.5*args.A[atids,:][:,atids]
-  cm_list = [Ak.item()]
-  cts = {}
-  for kn in range(2, summ1['ko']):
-    argsn = copy.deepcopy(args)
-    atids = summ1['csel_ids'][:kn]
-    Ak = 0.5*argsn.A[atids,:][:,atids]
+  # atids = summ1['csel_ids'][:1]
+  # Ak = 0.5*args.A[atids,:][:,atids]
+  # cm_list = [Ak.item()]
+  # cts = {}
+  # for kn in range(2, summ1['ko']):
+  #   argsn = copy.deepcopy(args)
+  #   atids = summ1['csel_ids'][:kn]
+  #   Ak = 0.5*argsn.A[atids,:][:,atids]
 
-    mdln, coan_val, costs_uc = gp1(argsn)  
-    summn = summarydict(argsn, mdln.tf())
+  #   mdln, coan_val, costs_uc = gp1(argsn)  
+  #   summn = summarydict(argsn, mdln.tf())
 
-    cm_list.append(summn['coan'].item())
-    cts[kn] = summn['csel_vals']
+  #   cm_list.append(summn['coan'].item())
+  #   cts[kn] = summn['csel_vals']
 
-  cm_list.append(summ1['coan'].item())
-  cts[summ1['ko']] = summ1['csel_vals']
+  # cm_list.append(summ1['coan'].item())
+  # cts[summ1['ko']] = summ1['csel_vals']
 
-  # choose dimnishing return pop. size.
-  ho = 1-np.array(cm_list)
-  holist = list(ho)
-  k_rec = np.argmax(ho)+1
-  th = np.arange(1, len(cm_list)+1)
+  # # choose dimnishing return pop. size.
+  # ho = 1-np.array(cm_list)
+  # holist = list(ho)
+  # k_rec = np.argmax(ho)+1
+  # th = np.arange(1, len(cm_list)+1)
 
-  # write summary of opt. ctrbs. to .txt
-  kresultpath = f"{PLOT_PATH}/ks"
-  os.makedirs(kresultpath, exist_ok=True)
-  with open(f"{kresultpath}/opt_ctrbs-k={summ1['ko']}.txt", "w") as out_file:
+  # # write summary of opt. ctrbs. to .txt
+  # kresultpath = f"{PLOT_PATH}/ks"
+  # os.makedirs(kresultpath, exist_ok=True)
+  # with open(f"{kresultpath}/opt_ctrbs-k={summ1['ko']}.txt", "w") as out_file:
 
-    out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
-    [out_file.write(
-       "\t".join([str(summ1['csel_ids'][i]), 
-                  str(summ1['csel_vals'][i])]) + "\n")  
-    for i in range(0, summ1['ko']) ]     
+  #   out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
+  #   [out_file.write(
+  #      "\t".join([str(summ1['csel_ids'][i]), 
+  #                 str(summ1['csel_vals'][i])]) + "\n")  
+  #   for i in range(0, summ1['ko']) ]     
 
-  # write summary of dim. ctrbs. to .txt
-  kresultpath = f"{PLOT_PATH}/ks"
-  os.makedirs(kresultpath, exist_ok=True)
-  with open(f"{kresultpath}/dim_ctrbs-k={k_rec}.txt", "w") as out_file:
+  # # write summary of dim. ctrbs. to .txt
+  # kresultpath = f"{PLOT_PATH}/ks"
+  # os.makedirs(kresultpath, exist_ok=True)
+  # with open(f"{kresultpath}/dim_ctrbs-k={k_rec}.txt", "w") as out_file:
 
-    out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
-    [out_file.write(
-       "\t".join([str(summ1['csel_ids'][i]), 
-                  str(summ1['csel_vals'][i])]) + "\n")  
-    for i in range(0, k_rec) ]    
+  #   out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
+  #   [out_file.write(
+  #      "\t".join([str(summ1['csel_ids'][i]), 
+  #                 str(summ1['csel_vals'][i])]) + "\n")  
+  #   for i in range(0, k_rec) ]    
 
-  plt.rcParams['axes.linewidth'] = 0.1
-  csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
-  figsz = (0.4, 0.25)
-  dpi = 1900
-  figh = plt.figure(figsize=figsz,
-          tight_layout=True, dpi=dpi,clear=True)
-  ax = plt.gca()
-  ax.plot(th, cm_list, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{H_e^\star}$')
-  ax.plot(th[k_rec-1], cm_list[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
-  pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim1_plt", r'size, $k$', r'metric', int=True, dpi=dpi)
+  # plt.rcParams['axes.linewidth'] = 0.1
+  # csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
+  # figsz = (0.4, 0.25)
+  # dpi = 1900
+  # figh = plt.figure(figsize=figsz,
+  #         tight_layout=True, dpi=dpi,clear=True)
+  # ax = plt.gca()
+  # ax.plot(th, cm_list, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{H_e^\star}$')
+  # ax.plot(th[k_rec-1], cm_list[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
+  # pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim1_plt", r'size, $k$', r'expected homozygosity', int=True, dpi=dpi)
 
-  plt.rcParams['axes.linewidth'] = 0.1
-  csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
-  figsz = (0.4, 0.25)
-  dpi = 1900
-  figh = plt.figure(figsize=figsz,
-          tight_layout=True, dpi=dpi,clear=True)
-  ax = plt.gca()
-  ax.plot(th, holist, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{H_o^\star}$')
-  ax.plot(th[k_rec-1], holist[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
-  pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'metric', int=True, dpi=dpi)
+  # plt.rcParams['axes.linewidth'] = 0.1
+  # csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
+  # figsz = (0.4, 0.25)
+  # dpi = 1900
+  # figh = plt.figure(figsize=figsz,
+  #         tight_layout=True, dpi=dpi,clear=True)
+  # ax = plt.gca()
+  # ax.plot(th, holist, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{H_o^\star}$')
+  # ax.plot(th[k_rec-1], holist[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
+  # pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
 
   print('Done!')
   print(f"{('~~~~')*20}")
