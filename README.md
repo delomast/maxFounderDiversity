@@ -117,13 +117,11 @@ This tells the tool that the allele frequency data files are in a source directo
 
 These each passess in a file (*that can be loaaded with `numpy`*) containing a co-ancestry matrix of n populations to the tool.
 
-<!-- #### Web Frontend
+#### Web Frontend
 In a terminal, run: 
 `
 flask --app sslview --debug run --host=0.0.0.0  
 `
-to access the tool in form of a user-friendly web application. -->
-<!-- 
 <details>
   <summary> Quick Start (Web Frontend) </summary>
   <div>
@@ -144,7 +142,7 @@ to access the tool in form of a user-friendly web application. -->
 Each line of the $n$ input files should have the same chromosome name and position for all populations. We adopt this particular format of input file, since it can be easily generated from common genotype file formats with existing, widely used software.
   
 </div>
-</details> -->
+</details>
 
 #### Acknowledgments
 USDA-ARS AI-COE/SCINet Graduate Research Fellowship/Internship. 2023.

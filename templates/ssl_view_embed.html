@@ -20,6 +20,8 @@
             <th> Value,  \( z_k \) </th>
           {% elif col == "dz"%}
             <th> Returns, \( d z_k \) </th>
+          {% elif col == "c" %}
+            <th> {{ "Relative contribution (%)" }}, \(p_i\) </th>
           {% else %}
             <th> {{ col }} </th>
           {% endif %}
@@ -27,7 +29,7 @@
       </tr>
     </thead>
     <tbody>
-      {% set optset = range(klow,kupp+1) %}
+      {% set optset = range(1,klow+1) %}
       {% for pop_idx, row in zip(poploptcombs_idxs,optcombs_rowdata) %}
         {% set k =  pop_idx+1 %}
         {% if k in optset %}
@@ -37,9 +39,17 @@
         {% endif %}
           <td> {{ k }} </td>
           {% for col, cell in zip(optcombs_cols, row) %}
-            {% if col != "combs_idx"%}
+            <!-- {% if col != "combs_idx"%}
               {% set fracval =  cell %}
               <td>{{ '%0.4f' % fracval |float }}</td>
+            {% else %}
+              <td>{{ cell }}</td>
+            {% endif %}             -->
+            {% if col == "idx"%}
+            <td>{{ int(cell) }}  </td>
+            {% elif col == "c" %}
+              {% set percentval =  cell*100 %}
+              <td>{{ '%2.2f' % percentval |float }}</td>
             {% else %}
               <td>{{ cell }}</td>
             {% endif %}
@@ -64,7 +74,7 @@
         {% for col in relctrbs_cols %}
           {% if col == "idx" %}
             <th> Population Index, \(i\) </th>
-          {% elif col == "p" %}
+          {% elif col == "c" %}
             <th> {{ "Relative contribution (%)" }}, \(p_i\) </th>
           {% else %}
             <th> {{ col }} (\(\%\)) </th>

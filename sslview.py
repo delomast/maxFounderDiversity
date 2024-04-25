@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from rmbin.utility import *
+from ssldefs import *
 
 import matplotlib
 matplotlib.use("Agg")
@@ -49,7 +49,8 @@ def setup():
   app.secret_key = secrets.token_hex()
   session["MAX_BATCHSIZE"] = request.form["batchsize"]
   # session["STREAM_LEARN"] = request.form["streamer"]
-  # session["QUAD_OBJ_CHOICE"] = request.form["learner"]
+  session["NO_MAXSTEPS"] = True
+  session["MAXSTEPS"] = 1000
   session["USE_CORR"] = request.form["scaler"]
   inpfiles = request.files.getlist("files")
   print(inpfiles)
@@ -60,14 +61,15 @@ def setup():
   # print(DATA_PATH)
   session["DATA_PATH"] = DATA_PATH
   session["S_PLOT_PATH"] = f"static/session/{app.secret_key}/trainplts"
-  
+  session["noPlots"] = False
+  session["debug"] = True
+
   for file in inpfiles:
       filename = secure_filename(file.filename)
       file.save(os.path.join(DATA_PATH, filename))
   
   # print(session["DATA_PATH"])
-  # print(session["QUAD_OBJ_CHOICE"])
-  
+    
   return Response(status=204) # 
 
 
@@ -77,11 +79,10 @@ def view():
   print(session)
   print(app.secret_key)
   
-  results = run_web_ssl(cfgs=session)
-  klow = results['k_low'] 
-  kupp = results['k_upp']
-  df_relctrbs = results['dataframe_1']
-  df_poploptcombs = results['dataframe_2']
+  klow, results = rdim_opt(cfgs=session)
+  kupp = results['ko']
+  df_relctrbs = results['dfsel']
+  df_poploptcombs = results['dftable'].iloc[:klow]
    
   print(list(df_relctrbs.values.tolist()))
   
@@ -92,95 +93,12 @@ def view():
           optcombs_cols=df_poploptcombs.columns.values, 
           poploptcombs_idxs=df_poploptcombs.index, 
           optcombs_rowdata=list(df_poploptcombs.values.tolist()),
-          relctrbsfig=f"{session['S_PLOT_PATH']}/relctrbs_sslplot.png",
-          popcombsfig=f"{session['S_PLOT_PATH']}/popchoice_sslplot.png",
-          trlossfig=f"{session['S_PLOT_PATH']}/loss_plot.png",
+          relctrbsfig=f"{session['S_PLOT_PATH']}/ctrbs_bar.png",
+          popcombsfig=f"{session['S_PLOT_PATH']}/rdim1_plt.png",
+          trlossfig=f"{session['S_PLOT_PATH']}/coan_t.png",
           klow=klow, kupp=kupp,
           zip=zip, int=int)
   
-
-def run_web_ssl(cfgs):
-  
-  SERVER_ROOT = Path(__file__).parents[0]
-  PLOT_PATH = (SERVER_ROOT / cfgs["S_PLOT_PATH"] ).resolve()
-  os.makedirs(PLOT_PATH, exist_ok=True)
-  DATA_ROOT = cfgs["DATA_PATH"]
-
-  POP_FILES = glob.glob(f"{DATA_ROOT}/*")
-  # print(POP_FILES)
-  N_EFF = len(POP_FILES)
-  USE_CUDA = False
-  USE_CORR = cfgs["USE_CORR"]
-  if USE_CORR == "True":
-    USE_CORR = True
-  else:
-    USE_CORR = False
-  MAX_BATCHSIZE = int(cfgs["MAX_BATCHSIZE"])
-  MAX_EPOCHS = 1
-  ERR_OPT_ACC = 1E-15 # 1E-5, 1E-8, 1E-10
-  QUAD_OBJ_CHOICE = True
-  MAX_STEPS = (N_EFF**2)
-  NO_MAXSTEPS = True
-  
-  # batch_size: selected data size per batch
-  data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
-  n = data_ldr.neff
-
-  # instantiate self-supervised model
-  mdl = QSSLNet(in_dim=n,out_dim=n)
-  if USE_CUDA: 
-    mdl = mdl.cuda()
-  mdl.set_learner(
-      AutoSGMQuad(mdl.Lin_W.parameters(), eps=ERR_OPT_ACC, usecuda=USE_CUDA) 
-      )
-
-  for epoch in range(MAX_EPOCHS):
-    ''' EPOCH BEGIN: A single pass through the data'''
-    SVLISTS = dict()
-    SVLISTS['cost'] = []
-    SVLISTS['dfcost'] = []
-    SVLISTS['wt'] = []
-    SVLISTS['gt'] = []
-    SVLISTS['ct'] = []
-    SVLISTS['yt'] = []
-    SVLISTS['sst'] = []
-    SVLISTS['btt'] = []
-    
-    SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
-    print("Epoch: " + str(epoch+1)) 
-    walltime = time.time()
-    ''' PART 1: LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
-
-    # load dataset, and dataloader
-    for (b_idx, batch) in enumerate(data_ldr):
-      A = batch[0] #homozygozity
-    
-    #.. learn after full pass over data
-    loss, c_t, y, alphas, betas = trainmdl(mdl, A,
-            USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, ERR_OPT_ACC, 
-            QUAD_OBJ_CHOICE, SVLISTS)  
-          
-    ''' EPOCH END.'''
-    walltime = (time.time() - walltime)/60 
-    print(f"\nTotal batches: {b_idx+1}, time elapsed: {walltime:.2f}-mins") 
-    data_ldr.close()
-    data_ldr.batches = b_idx+1
-    print("End epoch.")
-
-    ''' PART 2: CHOOSE POPULATIONS. '''
-    # sort contributions     
-    results = get_optimal_sets(POP_FILES, n, c_t)
-
-    ''' PLOTS. ''' 
-    # n,phat,pop_sortidxs,z,dz,klow,kupp
-    web_render_results(PLOT_PATH, n, results,
-            SVLISTS, skip_heavy_plots=False)
-    print('Done!')
-    dir_list = os.listdir(PLOT_PATH)
-    print("Saved Decision Plots to\n'",PLOT_PATH,"'\n")
-    for dir_file in dir_list: print(dir_file) 
-    
-  return results
   
   
   
