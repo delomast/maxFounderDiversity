@@ -319,8 +319,10 @@ def rdim_opt(SCRATCH_FOLDER, noplts=False):
 
   return k_rec
 
-# GLOBAL configs
 # print(Path.cwd())
+
+# set `noplts` back to `True` for production tests
+
 SCRATCH_FOLDERS = ["alle_frq_dirs/test_af",  "alle_frq_dirs/sthd_af"]
 for dir in SCRATCH_FOLDERS:
   k_rec = rdim_opt(dir, noplts=True)
