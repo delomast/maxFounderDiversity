@@ -167,8 +167,9 @@ def ana_rdim(PLOT_PATH, args, summ1):
     writetxt_dim(summ1, k_rec, kresultpath)    
 
     # plot
-    ho_plt(PLOT_PATH, cm_list, k_rec, th)
-    he_plt(PLOT_PATH, helist, k_rec, th)
+    if args.noplts:
+      ho_plt(PLOT_PATH, cm_list, k_rec, th)
+      he_plt(PLOT_PATH, helist, k_rec, th)
     return k_rec
 
 def cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp):
@@ -213,7 +214,7 @@ def ctrbs_bar(PLOT_PATH, summ1, dpi):
 
 
 # main
-def rdim_opt(SCRATCH_FOLDER):
+def rdim_opt(SCRATCH_FOLDER, noplts=False):
     
   SERVER_ROOT = Path(__file__).parents[0]
   DATA_ROOT = (SERVER_ROOT / SCRATCH_FOLDER ).resolve()
@@ -223,7 +224,7 @@ def rdim_opt(SCRATCH_FOLDER):
   # search+select .frq files in alle_frq_dirs/test_af
   POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
 
-  args = Props(pop_files=POP_FILES, n=len(POP_FILES), 
+  args = Props(pop_files=POP_FILES, n=len(POP_FILES), noplts=noplts,
               use_cuda=False, use_corr=True, max_steps=1000, no_maxsteps=True,
               max_batchsize=512, err_opt_acc=1e-15, debug=True)
   
@@ -274,7 +275,8 @@ def rdim_opt(SCRATCH_FOLDER):
     print(f"avg. kinship: {summ1['coan'].item()}")
 
   # detach().numpy(force=True).flatten())
-  dpi = cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
+  if args.noplts:
+    dpi = cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
 
   ctrbs_bar(PLOT_PATH, summ1, dpi)
 
@@ -297,7 +299,8 @@ def rdim_opt(SCRATCH_FOLDER):
     print(trunc(answr['slsqp'].x, 5).T.tolist())
 
   walltime = (time.time() - walltime)/60 
-  print(f"Total batches: {b_idx+1}, time elapsed: {walltime:.2f}-mins") 
+  # print(f"\nTotal batches: {b_idx+1}")
+  print(f"time elapsed: {walltime:.2f}-mins", ', optimum population size:', summ1['ko']) 
 
   data_ldr.close()
   data_ldr.batches = b_idx+1
@@ -305,19 +308,22 @@ def rdim_opt(SCRATCH_FOLDER):
   ''' 1 EPOCH END.'''
 
   # analyze diminishing returns
+  walltime = time.time()
   k_rec = ana_rdim(PLOT_PATH, args, summ1)
+  walltime = (time.time() - walltime)/60 
+  # print(f"\nTotal batches: {b_idx+1}")
+  print(f"time elapsed: {walltime:.2f}-mins", ', recommended population size:', (k_rec, summ1['ko']) ) 
 
   print('Done!')
   print(f"{('~~~~')*20}")
 
   return k_rec
 
-
 # GLOBAL configs
 # print(Path.cwd())
-SCRATCH_FOLDER = "alle_frq_dirs/test_af"
-# SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
-k_rec = rdim_opt(SCRATCH_FOLDER)
+SCRATCH_FOLDERS = ["alle_frq_dirs/test_af",  "alle_frq_dirs/sthd_af"]
+for dir in SCRATCH_FOLDERS:
+  k_rec = rdim_opt(dir, noplts=True)
 
   
 

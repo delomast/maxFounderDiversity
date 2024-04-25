@@ -30,5 +30,4 @@ jobs:
     - name: Run Tests
       run: |
         # python ssltest.py
-        python sslcmd.py --source_dir ./alle_frq_dirs/sthd_af --noPlots
         # flask --app sslview run --debug --host=0.0.0.0 
