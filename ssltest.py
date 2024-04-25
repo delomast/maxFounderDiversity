@@ -167,7 +167,7 @@ def ana_rdim(PLOT_PATH, args, summ1):
     writetxt_dim(summ1, k_rec, kresultpath)    
 
     # plot
-    if args.noplts:
+    if not args.noplts:
       ho_plt(PLOT_PATH, cm_list, k_rec, th)
       he_plt(PLOT_PATH, helist, k_rec, th)
     return k_rec
@@ -275,10 +275,10 @@ def rdim_opt(SCRATCH_FOLDER, noplts=False):
     print(f"avg. kinship: {summ1['coan'].item()}")
 
   # detach().numpy(force=True).flatten())
-  if args.noplts:
+  if not args.noplts:
     dpi = cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
 
-  ctrbs_bar(PLOT_PATH, summ1, dpi)
+    ctrbs_bar(PLOT_PATH, summ1, dpi)
 
   # print('\n**PRE**')
   # y_opt_uc, y_opt, lmda_opt, cf = unc_sel(args.A, args.use_cuda, args.use_corr, args.max_steps, args.no_maxsteps, args.err_opt_acc)
