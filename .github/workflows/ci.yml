@@ -29,5 +29,5 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       run: |
-        # python ssltest.py
+        python ssltest.py
         # flask --app sslview run --debug --host=0.0.0.0 
