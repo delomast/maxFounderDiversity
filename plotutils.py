@@ -15,9 +15,7 @@ import numpy as np
 
 import pandas as pd
 
-import torch, torchvision
-torchvision.disable_beta_transforms_warning()
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as tf
 from torch.utils.data import Dataset,DataLoader
