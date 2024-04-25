@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 
-from utility import *
+from rmbin.utility import *
 
 import matplotlib
 matplotlib.use("Agg")
@@ -23,13 +23,12 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
   os.makedirs(PLOT_PATH, exist_ok=True)
   
   if not ismatrix:
-    N_EFF = len(POP_FILES)
+    n = len(POP_FILES)
   else:
-    N_EFF = POP_FILES.shape[0]
+    n = POP_FILES.shape[0]
   USE_CUDA = False
   USE_CORR = cfgs["USE_CORR"]
   MAX_BATCHSIZE = int(cfgs["MAX_BATCHSIZE"])
-  MAX_EPOCHS = 1
   ERR_OPT_ACC = 1E-15 # 1E-5, 1E-8, 1E-10
   EPS = 1E-15
   QUAD_OBJ_CHOICE = True
@@ -39,10 +38,8 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
 
   # batch_size: selected data size per batch
   if not ismatrix:
-    data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=N_EFF,max_batch_size=MAX_BATCHSIZE, avgmode=3)
-    n = data_ldr.neff
-  else:
-    n = POP_FILES.shape[0]
+    data_ldr = PopDatasetStreamerLoader(POP_FILES=POP_FILES,neff=n,max_batch_size=MAX_BATCHSIZE, avgmode=3)
+    assert n == data_ldr.neff
 
   # instantiate self-supervised model
   mdl = QSSLNet(in_dim=n,out_dim=n, eps=EPS)
@@ -61,7 +58,8 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
   SVLISTS['sst'] = []
   SVLISTS['btt'] = []
   SVLISTS['wt'].append(1*mdl.weight_W.detach().numpy(force=True).flatten())
-  
+  SVLISTS['het'] = []
+  SVLISTS['widt'] = []  
   # print("Epoch: " + str(epoch+1)) 
   print(f"{('~~~~')*20}")
   walltime = time.time()
@@ -74,15 +72,30 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
   else:
     b_idx = 0
     batch = None
-    A = torch.tensor(POP_FILES, dtype=torch.float)
+    A = torch.tensor(POP_FILES, dtype=torch.float)  
+  # fix for ~0 value, any semidefiniteness in matrix
+  # and small negative entries.
+  if A.abs().min() < 1e-3: A.abs_()
     
-  #.. learn after full pass over data
-  cost, c_t, y, alphas, betas = trainmdl(mdl, A,
-        USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, ERR_OPT_ACC, 
-        QUAD_OBJ_CHOICE, SVLISTS)  
-  results = get_optimal_sets(POP_FILES, n, c_t, A, ismatrix)
+
+  # check: sqp
+  sol, answr, allx, allf = scipyopt(A, n, PLOT_PATH)
   
-  ''' EPOCH END.'''
+  # check: inversion (unconstr. bounds)
+  edingetal_sel(A, PLOT_PATH)
+  
+  # learn nn: (w/o bounds)
+  y_opt_uc, y_opt, lmda_opt, cf = unc_sel(A, USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, ERR_OPT_ACC)
+  mdl.lmda = lmda_opt
+  print(lmda_opt.item())
+  # learn mdl: (with bounds)
+  cost, c_t, y_t, alphas, betas = trainmdl(mdl, A,
+      USE_CUDA, USE_CORR, MAX_STEPS, NO_MAXSTEPS, ERR_OPT_ACC, 
+      QUAD_OBJ_CHOICE, SVLISTS)
+  
+  # sort contributions     
+  results = get_optimal_sets(POP_FILES, n, c_t, A, ismatrix)  
+  
   walltime = (time.time() - walltime)/60 
   # print(f"\nTotal batches: {b_idx+1}")
   print(f"time elapsed: {walltime:.2f}-mins") 
@@ -90,7 +103,10 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
     data_ldr.close()
     data_ldr.batches = b_idx+1
   # Print out ...
+  print(f"mdl. loss:{cost}")
   print(f"avg. kinship = {results['avg-kinship'].item()}")
+  # print("End epoch.")   
+  ''' 1 EPOCH END.'''
   
   ''' PLOTS. ''' 
   with open(f"{PLOT_PATH}/contributions.txt", "w") as out_file:
@@ -99,19 +115,13 @@ def run_cmd_ssl(cfgs, POP_FILES, ismatrix=False):
       for i in range(0,len(results["c_star"])) 
     ]     
   if not cfgs['noPlots']:
-    web_render_results(PLOT_PATH, n, results, SVLISTS, skip_heavy_plots=False)
+    web_render_results(PLOT_PATH, n, results, SVLISTS, skip_heavy_plots=False, mdl=mdl)
   
-  #
-  ecs, ecid, eding_f, secs, secid = dir_sel(mdl.A)
-  save_eding(PLOT_PATH, ecs, ecid, eding_f, secs, secid)
-  # print('Done!')
-  print(f"{('~~~~')*20}")
+  ''' CHOOSE POPULATIONS. '''
+  k_rec = recurse_dim_returns(A, n, c_t, results, PLOT_PATH, ERR_OPT_ACC, USE_CORR, USE_CUDA)
   
-  ''' PART 2: CHOOSE POPULATIONS. '''
-  k_rec = recurse_dim_returns(A, n, results, PLOT_PATH, ERR_OPT_ACC, USE_CORR, USE_CUDA)
   return k_rec
   
-
 def dir_path(path):
     if os.path.isdir(path):
         return path
@@ -125,7 +135,7 @@ def str2bool(s):
     return s == 'True'
   
 override = False # production behaviour.
-# override = True # uncomment for testing/debugging.
+override = True # uncomment for testing/debugging.
 
 if not override:
   parser = argparse.ArgumentParser(description="SSL CLI Tool!")
@@ -165,7 +175,7 @@ if not override:
   print(args)
 else: 
   ''' 
-  Test- override cmdline, note: comment out from first 
+  Test => override cmdline, note: comment out from first 
   'parser = ...' line to 'print(args)' line
   '''
   cfgs = {}

@@ -62,6 +62,7 @@ class QSSLNet(nn.Module):
     self.weight_W = nn.Parameter(torch.empty((in_dim, out_dim)))
     self.Lin_W = Linear(self.weight_W)
     self.learnerW = None
+    self.register_buffer("lmda", torch.tensor(1, dtype=torch.float))
     
     
     self.last_cost = torch.tensor(torch.inf, dtype=torch.float)    
@@ -97,7 +98,7 @@ class QSSLNet(nn.Module):
     '''
     if xinp is not None:
       self.x = 1*xinp # +/- c_{t-1} works
-    y =  self.Lin_W(self.x)  
+    y =  self.Lin_W(self.x) # - (self.x.mm(self.x.T)).mm(self.x)
     return y
   
   
@@ -116,12 +117,8 @@ class QSSLNet(nn.Module):
     if A.shape[0] != A.shape[1]:
       raise Exception(f"Expected data matrix should be {self.out_dim} x {self.out_dim}")
     
-    b = 1*self.ones_vec
+    b = self.ones_vec
         
-    # fix for ~0 value, any semidefiniteness in matrix
-    # and small negative entries.
-    if A.abs().min() < 1e-3: A.abs_()
-      # if abs(min(A[A<0].tolist())) < 0.1:
       
     dd = 1/(torch.diag(A).sqrt())
     # skip normalizing with diagonal, if diag elements are ~ 1
@@ -141,10 +138,18 @@ class QSSLNet(nn.Module):
     '''
     # f = 0.5*y'Ay - b'y  + 1
     # fmin = 1 - 0.5*(y.T.mm(mdl.A.mm(y)))
-    return ((0.5*(y.T.mm(self.A.mm(y)))).sub(((self.b.T.mm(y))-1)))
+    return ((0.5*(y.T.mm(self.A.mm(y)))).sub(self.lmda*((self.b.T.mm(y))-1)))
     # return (0.5*y.T.mm(self.A.mm(y))).sub(((y.T.mm(y))-1))
-
     
+    
+  def coan_metric(self, A, c):
+    '''
+    Quadratic cost function
+    '''
+    # f = 0.5*y'Ay - b'y  + 1
+    return (0.5*(c.T.mm(A.mm(c))))
+  
+  
   @torch.no_grad()
   def delta_cost(self, f):
       ''' Abs. fractional change in cost '''
@@ -160,6 +165,17 @@ class QSSLNet(nn.Module):
     - computes output belief vector at iteration t, c_t
     '''
     return (self.M.mm(inp)).softmax(dim=0)
+  
+  
+  @torch.no_grad()
+  def crelu(self, inp):
+    ''' The output head of the network.
+    - transforms to the original co-ordinate space with matrix M.
+    - computes output belief vector at iteration t, c_t
+    '''
+    return (self.M.mm(inp)).relu()
+ 
+
 
   @torch.no_grad()
   def csnorm(self, inp):

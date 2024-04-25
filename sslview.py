@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from utility import *
+from rmbin.utility import *
 
 import matplotlib
 matplotlib.use("Agg")

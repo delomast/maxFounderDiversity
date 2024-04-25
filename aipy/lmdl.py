@@ -65,7 +65,8 @@ class LNet(nn.Module):
       Initialize parameters randomly
       """
       for p in self.parameters():
-          nn.init.normal_(p, std=self.eps)
+          # nn.init.normal_(p, std=self.eps)
+          nn.init.constant_(p, 1/self.dim)
 
   
   @torch.no_grad()
@@ -83,11 +84,8 @@ class LNet(nn.Module):
     if A.shape[0] != A.shape[1]:
       raise Exception(f"Expected data matrix should be {self.out_dim} x {self.out_dim}")
     
-    b = 1*self.ones_vec
+    b = self.ones_vec
         
-    # fix for ~0 value, any semidefiniteness in matrix
-    # and small negative entries.
-    if A.abs().min() < 1e-3: A.abs_()
     # if abs(min(A[A<0].tolist())) < 0.1:
       
     dd = 1/(torch.diag(A).sqrt())
@@ -108,6 +106,13 @@ class LNet(nn.Module):
     '''
     # f = 0.5*y'Ay - b'y
     return ((0.5*(w.T.mm(self.A.mm(w)))).sub(((self.b.T.mm(w)))))
+  
+  def uncquadcost(self, w):
+    '''
+    Quadratic cost function
+    '''
+    # f = 0.5*y'Ay - b'y + 1
+    return ((0.5*(w.T.mm(self.A.mm(w)))).sub(((self.b.T.mm(w)))).add(1))
 
     
   @torch.no_grad()

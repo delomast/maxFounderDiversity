@@ -168,7 +168,8 @@ class aSGM():
         
         # out: update parameter w_t: by integrating P-D component
         w_t.add_(v_t.neg_().mul_(alpha_t))
-                
+        # project
+        # w_t.relu_()
             
         # optional: Et[w] output smoothing 
         if beta_out_t > 0:
