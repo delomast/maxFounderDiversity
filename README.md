@@ -5,18 +5,19 @@
 
 <p align="center">
 <picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="280">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="280">
-  <img style="mix-blend-mode: luminosity;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="280">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
+  <img style="mix-blend-mode: luminosity" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="280">
+</picture>
+<picture>
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="350">
+  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="350">
+  <img style="mix-blend-mode: luminosity;" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="350">
 </picture>
 <!-- <br clear="left"/> -->
 <!-- <br clear="right"/> -->
 <!-- <br clear="both"/> -->
-<picture>
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="350">
-  <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: light)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="350">
-  <img style="mix-blend-mode: luminosity" src="static/svdirs/dev-session/alle_frq_dirs/sthd_af/rdim1_plt.png" width="350">
-</picture>
+
 </p>
 
 A self-supervised neural network algorithm for automatically choosing (or ranking) which populations $s_j$ out of a given $n>1$ populations should we sample broodstock from and in what relative proportions $\mathbf{c}^\star$, inorder to maximize genetic diversity (or minimize co-ancenstry) with the least diminishing returns in an offspring population. 
