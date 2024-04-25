@@ -1,6 +1,8 @@
 """
 :mod:`qautosgm` is a package implementing the stochastic gradient learning algorithm for quadratic functions.
 """
+from __future__ import annotations
+
 
 # Common doc strings among pytorch's optimizer impl.
 _foreach_doc = r"""foreach (bool, optional): whether foreach implementation of optimizer
@@ -20,7 +22,7 @@ _maximize_doc = r"""maximize (bool, optional): maximize the params based on the
 _email_doc = r"""somefuno@oregonstate.edu"""
 
 
-from __future__ import annotations
+
 from dataclasses import dataclass
 
 import math, torch
