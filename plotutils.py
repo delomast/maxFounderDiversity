@@ -34,7 +34,7 @@ from mpl_toolkits import mplot3d
 from mpl_toolkits import mplot3d
 import matplotlib.animation as animation
 from matplotlib import gridspec
-from IPython.display import clear_output
+# from IPython.display import clear_output
 from mpl_toolkits.mplot3d import proj3d
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.text import Annotation

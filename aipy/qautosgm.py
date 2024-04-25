@@ -1,8 +1,7 @@
-from __future__ import annotations
 """
 :mod:`qautosgm` is a package implementing the stochastic gradient learning algorithm for quadratic functions.
 """
-# from __future__ import annotations
+from __future__ import annotations
 
 
 # Common doc strings among pytorch's optimizer impl.
