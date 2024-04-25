@@ -89,8 +89,78 @@ def cmplx2real(lols):
 class Props():
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
+
+'''     
+LPF2
+'''
+
+class LPF2():
+
+    def __init__(self, inplace:bool=True, cdevice=None):
+        self.inplace = inplace
+        self.cdevice = cdevice
+
+    '''
+    ***
+    A General First-order Low Pass Filter Structure
+    (Recursive Weighted Average Function)
+    '''
+    @torch.no_grad()
+    def torch_ew_compute(self, in_t:Tensor, x:Tensor, 
+                        beta:Tensor, step:Tensor=torch.ones((1,)), mode=1):
         
-    
+        '''
+        in_t: input at current time
+        x: state at previous time
+        beta: LPF pole at current time
+        step: current discrete time
+        mode: [default: mode=1] unbiased (all, except 2) | asympt. unbiased (2)
+
+        out_t : output at current time, t
+        x : updated state for next time, t+1
+        '''
+        # temps. (avoid repititions)
+        k, betak = step, beta
+        
+        one_minus_betak = (1 - betak)
+        betak_pow_k = betak.pow(k)
+        one_minus_betak_pow_k = (1-betak_pow_k)
+        gamma_t = 1
+        
+        
+        if mode == 0: # exponential. (stable if 0 \le \beta < 1)   
+            
+            # forward:
+            ((x.mul_((betak - betak_pow_k))).add_(one_minus_betak*in_t)).div_(one_minus_betak_pow_k)
+            out_k = 1*x
+            
+        elif mode == 1: # exponential. (stable if 0 \le \beta < 1)
+        
+            # forward:
+            gamma_t = (one_minus_betak/one_minus_betak_pow_k) 
+            (x.mul_(betak)).add_(in_t)
+            out_k = gamma_t*x       
+                
+        elif mode == 2: # exponential. (stable if 0 \le \beta < 1)
+
+            # forward:
+            (x.mul_(betak)).add_(one_minus_betak*in_t)
+            out_k = 1*x #/one_minus_betak_pow_k#
+            
+        elif mode == 3: # uniform (unstable as k \to infinity, as \beta \to 1)
+        
+            # forward:
+            (x.mul_(k-1)).add_(in_t).div_(k)
+            out_k = 1*x
+            
+        '''
+        out_k : output at current time, t
+        x : updated state for next time, t+1
+        '''
+        return out_k, x
+
+
+
 
 # LPF
 # The `LPF` class defines a generic first-order low pass filter structure for routine smoothing and averaging operations, with methods for exponential lowpass filtering, and raised cosine window generation.

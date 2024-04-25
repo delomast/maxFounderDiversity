@@ -10,9 +10,9 @@ from cvxopt import blas
 
 def extsolv(args, PLOT_PATH):      
   
-    A, n = args.A, args.n
+    n = args.n
     x0 = np.ones((n,1)).flatten()/n
-    Anp = A.detach().clone().numpy()
+    Anp = args.A.detach().clone().numpy()
 
     #A function to define the space where scipy.minimize should 
     #confine its search:

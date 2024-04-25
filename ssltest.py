@@ -92,6 +92,127 @@ def summarydict(args, c_t, ismatrix= False):
     
   return result
 
+def writetxt_dim(summ1, k_rec, kresultpath):
+    os.makedirs(kresultpath, exist_ok=True)
+    with open(f"{kresultpath}/dim_ctrbs-k={k_rec}.txt", "w") as out_file:
+      out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
+      [out_file.write(
+       "\t".join([str(summ1['csel_ids'][i]), 
+                  str(summ1['csel_vals'][i])]) + "\n")  
+      for i in range(0, k_rec) ]
+
+def writetxt_opt(summ1, kresultpath):
+    os.makedirs(kresultpath, exist_ok=True)
+    with open(f"{kresultpath}/opt_ctrbs-k={summ1['ko']}.txt", "w") as out_file:
+      out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
+      [out_file.write(
+       "\t".join([str(summ1['csel_ids'][i]), 
+                  str(summ1['csel_vals'][i])]) + "\n")  
+      for i in range(0, summ1['ko']) ]
+
+def he_plt(PLOT_PATH, helist, k_rec, th):
+    plt.rcParams['axes.linewidth'] = 0.1
+    csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
+    figsz = (0.4, 0.25)
+    dpi = 1900
+    figh = plt.figure(figsize=figsz,
+          tight_layout=True, dpi=dpi,clear=True)
+    ax = plt.gca()
+    ax.plot(th, helist, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{He^\star}$')
+    ax.plot(th[k_rec-1], helist[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
+    pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
+
+def ho_plt(PLOT_PATH, cm_list, k_rec, th):
+    plt.rcParams['axes.linewidth'] = 0.1
+    csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
+    figsz = (0.4, 0.25)
+    dpi = 1900
+    figh = plt.figure(figsize=figsz,
+          tight_layout=True, dpi=dpi,clear=True)
+    ax = plt.gca()
+    ax.plot(th, cm_list, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{Ho^\star}$')
+    ax.plot(th[k_rec-1], cm_list[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
+    pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim1_plt", r'size, $k$', r'expected homozygosity', int=True, dpi=dpi)
+
+def ana_rdim(PLOT_PATH, args, summ1):
+    atids = summ1['csel_ids'][:1]
+    Ak = 0.5*args.A[atids,:][:,atids]
+    cm_list = [Ak.item()]
+    cts = {}
+    for kn in range(2, summ1['ko']):
+      argsn = copy.deepcopy(args)
+      atids = summ1['csel_ids'][:kn]
+      Ak = 0.5*argsn.A[atids,:][:,atids]
+
+      mdln, coan_val, costs_uc = gp1(argsn)  
+      summn = summarydict(argsn, mdln.tf())
+
+      cm_list.append(summn['coan'].item())
+      cts[kn] = summn['csel_vals']
+
+    cm_list.append(summ1['coan'].item())
+    cts[summ1['ko']] = summ1['csel_vals']
+
+    # choose dimnishing return pop. size.
+    he = 1-np.array(cm_list)
+    helist = list(he)
+    k_rec = np.argmax(he)+1
+    th = np.arange(1, len(cm_list)+1)
+
+    # write summary of:
+    kresultpath = f"{PLOT_PATH}/ks"
+    # opt. ctrbs. to .txt
+    writetxt_opt(summ1, kresultpath)     
+    # dim. ctrbs. to .txt
+    writetxt_dim(summ1, k_rec, kresultpath)    
+
+    # plot
+    ho_plt(PLOT_PATH, cm_list, k_rec, th)
+    he_plt(PLOT_PATH, helist, k_rec, th)
+    return k_rec
+
+def cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp):
+    plt.rcParams['axes.linewidth'] = 0.1
+    csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
+    figsz = (0.4, 0.25)
+    dpi = 1900
+    figh = plt.figure(figsize=figsz,
+          tight_layout=True, dpi=dpi,clear=True)
+    ax = plt.gca()
+    # ax.plot(svlists.t, svlists.clmb_t, alpha=0.3, linewidth=csts['LW'], label=r'$0.5*\lambda$')
+    ax.plot(tcvx, cvxf, alpha=0.3, linewidth=csts['LW'], label='cvx')
+    ax.plot(tsqp, allf['slsqp'], alpha=0.3, linewidth=csts['LW'], label='slsqp')
+    ax.plot(svlists.t, svlists.cost_c_t, alpha=0.9, linewidth=csts['LW'], label='ours')
+    pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/coan_t", r'iterations, $t$',r'cost', int=True, dpi=dpi)
+    return dpi
+
+def ctrbs_bar(PLOT_PATH, summ1, dpi):
+    csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':2, 'Fx':2, 'figsvdir':'','fignm':''}
+    fig, ax = plt.subplots(figsize=(0.8, 0.5), dpi=dpi)
+    ax.barh(summ1['csel_ids'], summ1['csel_vals'], align='center')
+
+    labels = ax.get_xticklabels()
+    plt.setp(labels, rotation=0, horizontalalignment='left')
+    ax.set_yticks(summ1['csel_ids'], labels=summ1['csel_ids'])
+
+    ylabel='Population index' 
+    xlabel='optimum contributions'
+    ax.xaxis.set_tick_params(labelsize=csts['Fx']-0.5,length=csts['AL'], width=csts['LW'],pad=0.5)
+    ax.yaxis.set_tick_params(labelsize=csts['Fy']-0.5,length=csts['AL'], width=csts['LW'],pad=0.5)
+    ax.set_xlabel(xlabel, fontsize=csts['Fx'], labelpad=0.5)
+    ax.set_ylabel(ylabel, fontsize=csts['Fy'], labelpad=1.5)
+    # ax.yaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
+
+    # Label with specially formatted floats
+    # ax.bar_label(barhdl, fmt='%.2f')
+    ax.margins(y=0.05, tight=True)
+    plt.tight_layout(pad=0.1)
+    figpath = f"{PLOT_PATH}/ctrbs_bar.png"
+    plt.savefig(figpath, dpi=dpi)
+    plt.close(fig)
+
+
+# main
 def rdim_opt(SCRATCH_FOLDER):
     
   SERVER_ROOT = Path(__file__).parents[0]
@@ -111,7 +232,7 @@ def rdim_opt(SCRATCH_FOLDER):
   # buffer_size: data size < actual data size to load into mem. 
   # batch_size: selected data size per batch <= buffer_size
   # onesample_size: size of one data-point >= 1, < buffer_size
-  data_ldr = PopDatasetStreamerLoader(args.pop_files,args.n,args.max_batchsize, avgmode=3)
+  data_ldr = PopDatasetStreamerLoader(args.pop_files,args.n,args.max_batchsize)
   assert args.n == data_ldr.neff
 
 
@@ -136,58 +257,26 @@ def rdim_opt(SCRATCH_FOLDER):
   # check: inversion (unconstr. bounds)
   edingetal_sel(args.A, PLOT_PATH)
 
-  print('\n**GP1**')
+  # print('\n**GP1**')
   mdl_gp1, coan_val, costs_uc = gp1(args, svlists)  
-  print(mdl_gp1)
-  print('metric', coan_val, 'lambda', mdl_gp1.lmda.item())
-  print('costs: [cost_u, dcost_u, cost_c]',  costs_uc)
-  print(mdl_gp1.param_c.sum().item(), 
-        'sum', mdl_gp1.tf().sum().item(), 
-        'metric', mdl_gp1.coan_metric_tf().item(), 
-        'cost',mdl_gp1.quad_cost_sum1_tf().item()
-      )
   summ1 = summarydict(args, mdl_gp1.tf())
-  print(f"avg. kinship: {summ1['coan'].item()}")
+  
+  if args.debug:
+    print(mdl_gp1)
+    print('metric', coan_val, 'lambda', mdl_gp1.lmda.item())
+    print('costs: [cost_u, dcost_u, cost_c]',  costs_uc)
+    print(mdl_gp1.param_c.sum().item(), 
+          'sum', mdl_gp1.tf().sum().item(), 
+          'metric', mdl_gp1.coan_metric_tf().item(), 
+          'cost',mdl_gp1.quad_cost_sum1_tf().item()
+        )
+    
+    print(f"avg. kinship: {summ1['coan'].item()}")
 
   # detach().numpy(force=True).flatten())
-  
-  plt.rcParams['axes.linewidth'] = 0.1
-  csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
-  figsz = (0.4, 0.25)
-  dpi = 1900
-  figh = plt.figure(figsize=figsz,
-          tight_layout=True, dpi=dpi,clear=True)
-  ax = plt.gca()
-  # ax.plot(svlists.t, svlists.clmb_t, alpha=0.3, linewidth=csts['LW'], label=r'$0.5*\lambda$')
-  ax.plot(tcvx, cvxf, alpha=0.3, linewidth=csts['LW'], label='cvx')
-  ax.plot(tsqp, allf['slsqp'], alpha=0.3, linewidth=csts['LW'], label='slsqp')
-  ax.plot(svlists.t, svlists.cost_c_t, alpha=0.9, linewidth=csts['LW'], label='ours')
-  pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/coan_t", r'iterations, $t$',r'cost', int=True, dpi=dpi)
+  dpi = cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
 
-
-  csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':2, 'Fx':2, 'figsvdir':'','fignm':''}
-  fig, ax = plt.subplots(figsize=(0.8, 0.5), dpi=dpi)
-  ax.barh(summ1['csel_ids'], summ1['csel_vals'], align='center')
-
-  labels = ax.get_xticklabels()
-  plt.setp(labels, rotation=0, horizontalalignment='left')
-  ax.set_yticks(summ1['csel_ids'], labels=summ1['csel_ids'])
-
-  ylabel='Population index' 
-  xlabel='optimum contributions'
-  ax.xaxis.set_tick_params(labelsize=csts['Fx']-0.5,length=csts['AL'], width=csts['LW'],pad=0.5)
-  ax.yaxis.set_tick_params(labelsize=csts['Fy']-0.5,length=csts['AL'], width=csts['LW'],pad=0.5)
-  ax.set_xlabel(xlabel, fontsize=csts['Fx'], labelpad=0.5)
-  ax.set_ylabel(ylabel, fontsize=csts['Fy'], labelpad=1.5)
-  # ax.yaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-
-  # Label with specially formatted floats
-  # ax.bar_label(barhdl, fmt='%.2f')
-  ax.margins(y=0.05, tight=True)
-  plt.tight_layout(pad=0.1)
-  figpath = f"{PLOT_PATH}/ctrbs_bar.png"
-  plt.savefig(figpath, dpi=dpi)
-  plt.close(fig)
+  ctrbs_bar(PLOT_PATH, summ1, dpi)
 
   # print('\n**PRE**')
   # y_opt_uc, y_opt, lmda_opt, cf = unc_sel(args.A, args.use_cuda, args.use_corr, args.max_steps, args.no_maxsteps, args.err_opt_acc)
@@ -196,93 +285,27 @@ def rdim_opt(SCRATCH_FOLDER):
   # print(f"loss:{cf}")
   # print(f"avg. kinship: {summ2['coan'].item()}")
 
-
   # Optimum Contribution Lists
-  print('gp1')
-  print(trunc(mdl_gp1.tf().detach().numpy(),5).T.tolist()[0])
-  # print('mdlo.y')
-  # print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
-  print('cvx')
-  print(trunc(np.where(np.array(sol['x']) < 1e-5, 0, np.array(sol['x'])),5).T.tolist()[0])
-  print('sl')
-  print(trunc(answr['slsqp'].x, 5).T.tolist())
+  if args.debug:
+    print('gp1')
+    print(trunc(mdl_gp1.tf().detach().numpy(),5).T.tolist()[0])
+    # print('mdlo.y')
+    # print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
+    print('cvx')
+    print(trunc(np.where(np.array(sol['x']) < 1e-5, 0, np.array(sol['x'])),5).T.tolist()[0])
+    print('sl')
+    print(trunc(answr['slsqp'].x, 5).T.tolist())
 
   walltime = (time.time() - walltime)/60 
   print(f"Total batches: {b_idx+1}, time elapsed: {walltime:.2f}-mins") 
+
   data_ldr.close()
   data_ldr.batches = b_idx+1
   # print("End epoch.")
   ''' 1 EPOCH END.'''
 
-  # # view diminishing returns
-
-  # atids = summ1['csel_ids'][:1]
-  # Ak = 0.5*args.A[atids,:][:,atids]
-  # cm_list = [Ak.item()]
-  # cts = {}
-  # for kn in range(2, summ1['ko']):
-  #   argsn = copy.deepcopy(args)
-  #   atids = summ1['csel_ids'][:kn]
-  #   Ak = 0.5*argsn.A[atids,:][:,atids]
-
-  #   mdln, coan_val, costs_uc = gp1(argsn)  
-  #   summn = summarydict(argsn, mdln.tf())
-
-  #   cm_list.append(summn['coan'].item())
-  #   cts[kn] = summn['csel_vals']
-
-  # cm_list.append(summ1['coan'].item())
-  # cts[summ1['ko']] = summ1['csel_vals']
-
-  # # choose dimnishing return pop. size.
-  # ho = 1-np.array(cm_list)
-  # holist = list(ho)
-  # k_rec = np.argmax(ho)+1
-  # th = np.arange(1, len(cm_list)+1)
-
-  # # write summary of opt. ctrbs. to .txt
-  # kresultpath = f"{PLOT_PATH}/ks"
-  # os.makedirs(kresultpath, exist_ok=True)
-  # with open(f"{kresultpath}/opt_ctrbs-k={summ1['ko']}.txt", "w") as out_file:
-
-  #   out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
-  #   [out_file.write(
-  #      "\t".join([str(summ1['csel_ids'][i]), 
-  #                 str(summ1['csel_vals'][i])]) + "\n")  
-  #   for i in range(0, summ1['ko']) ]     
-
-  # # write summary of dim. ctrbs. to .txt
-  # kresultpath = f"{PLOT_PATH}/ks"
-  # os.makedirs(kresultpath, exist_ok=True)
-  # with open(f"{kresultpath}/dim_ctrbs-k={k_rec}.txt", "w") as out_file:
-
-  #   out_file.write("\t".join(["Pop_ID", "Proportion"]) + "\n")
-  #   [out_file.write(
-  #      "\t".join([str(summ1['csel_ids'][i]), 
-  #                 str(summ1['csel_vals'][i])]) + "\n")  
-  #   for i in range(0, k_rec) ]    
-
-  # plt.rcParams['axes.linewidth'] = 0.1
-  # csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
-  # figsz = (0.4, 0.25)
-  # dpi = 1900
-  # figh = plt.figure(figsize=figsz,
-  #         tight_layout=True, dpi=dpi,clear=True)
-  # ax = plt.gca()
-  # ax.plot(th, cm_list, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{H_e^\star}$')
-  # ax.plot(th[k_rec-1], cm_list[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
-  # pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim1_plt", r'size, $k$', r'expected homozygosity', int=True, dpi=dpi)
-
-  # plt.rcParams['axes.linewidth'] = 0.1
-  # csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
-  # figsz = (0.4, 0.25)
-  # dpi = 1900
-  # figh = plt.figure(figsize=figsz,
-  #         tight_layout=True, dpi=dpi,clear=True)
-  # ax = plt.gca()
-  # ax.plot(th, holist, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{H_o^\star}$')
-  # ax.plot(th[k_rec-1], holist[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
-  # pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
+  # analyze diminishing returns
+  k_rec = ana_rdim(PLOT_PATH, args, summ1)
 
   print('Done!')
   print(f"{('~~~~')*20}")
@@ -293,7 +316,7 @@ def rdim_opt(SCRATCH_FOLDER):
 # GLOBAL configs
 # print(Path.cwd())
 SCRATCH_FOLDER = "alle_frq_dirs/test_af"
-# SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
+SCRATCH_FOLDER = "alle_frq_dirs/sthd_af"
 k_rec = rdim_opt(SCRATCH_FOLDER)
 
   

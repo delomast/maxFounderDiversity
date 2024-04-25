@@ -68,7 +68,7 @@ class PopDatasetStreamerLoader():
     """
     @torch.no_grad()
     def __init__(self, POP_FILES,
-        neff=0, max_batch_size=1, avgmode=3, freq=1, 
+        neff=0, max_batch_size=1, avgmode=5, freq=1, 
         shuffle=False, seed=0, debug=False, device='cpu'):
         
         n = len(POP_FILES)
@@ -114,7 +114,7 @@ class PopDatasetStreamerLoader():
         self.MAX_BUFFER_SIZE = max_batch_size
         self.MAX_BATCH_SIZE = max_batch_size
 
-        self.stable_avgfcn = LPF()
+        self.avg = LPF()
         self.BETA = torch.tensor(0.9999999,dtype=torch.float) 
         self.avgmode = avgmode       
         
@@ -187,11 +187,11 @@ class PopDatasetStreamerLoader():
                     # He_Smat_l = 0.5*(1-Ho_Smat_l)
                     
                     self.line_cnt += 1    
-                    _, self.Ho_mat = self.stable_avgfcn.compute(
+                    _, self.Ho_mat = self.avg.compute(
                         in_t=Ho_Smat_l, x=self.Ho_mat, beta=self.BETA, 
                         step=self.line_cnt, mode=self.avgmode
                     )
-                    # _, self.He_mat = self.stable_avgfcn.torch_ew_compute(
+                    # _, self.He_mat = self.avg.compute(
                     #     in_t=He_Smat_l, x=self.He_mat, beta=self.BETA, 
                     #     step=self.line_cnt, mode=self.avgmode
                     # )
