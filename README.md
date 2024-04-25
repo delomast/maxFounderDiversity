@@ -107,7 +107,7 @@ This tells the tool that the allele frequency data files are in a source directo
 ##### Example 3
 - ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af --noPlots``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and skips making plots.
+This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and disables making plots.
 
 
 ##### Example 3
