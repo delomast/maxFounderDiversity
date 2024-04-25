@@ -15,11 +15,11 @@ Input data is either a *set of populations that could be sampled from (with know
 </picture>
 <p>
 
-Developed with the application of creating base populations for aquaculture breeding programs in mind. The figure above, shows the result for a given $n=25$ population of allele frequencies. It shows that a recommended population size of $\bar{k}=2$ minimizes co-ancestry (homozygosity) with the least diminishing returns. This respectively corresponds to a $92\\%$ reduction in redundancy. 
+Developed with the application of creating base populations for aquaculture breeding programs in mind. The figure above, shows the result for a given $n=25$ population of allele frequencies. It shows that a recommended population size of $\bar{k}=2$ minimizes co-ancestry (homozygosity) with the least diminishing returns. This corresponds to a $92\\%$ reduction in redundancy. 
 
 This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
 
-Learning of the relative optimum contributions (see figure below) in the $25$-population set gave an optimum population size $k^\star=5$. Further optimizing this for the point of diminishing returns gave $\bar{k}=2$
+Learning of the relative optimum contributions (see figure below) in the $25$-population set gave an optimum population size $k^\star=5$. Further optimizing this for the point of diminishing returns led to $\bar{k}=2$.
 <p align="center">
 <picture>
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="300">
