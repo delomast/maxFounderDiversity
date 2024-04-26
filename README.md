@@ -21,7 +21,7 @@ The optimum ${k}^\star=5$ can be viewed as an upper bound on the point of dimini
 
 This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
 
-The relative contributions of the optimum population combination size $k^\star=5$ in the $25$-population is illustrated below. 
+The relative contributions of the optimum population combination set $\mathcal{H}_{{k}^\star=5}$ in the $25$-population is illustrated below. 
 <p align="center">
 <picture>
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="300">
