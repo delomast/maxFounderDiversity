@@ -1,5 +1,5 @@
     
-## Self-supervised Learning of Optimum Contributions: An Application in Maximizing Genetic Variation
+## Learning of Optimum Contributions: An Application in Maximizing Genetic Variation
 ![example workflow](https://github.com/delomast/maxFounderDiversity/actions/workflows/ci.yml/badge.svg?event=push)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=red&labelColor=white)
 
