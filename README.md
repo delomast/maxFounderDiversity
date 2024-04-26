@@ -5,7 +5,7 @@
 
 A learning algorithm that assists with choosing (or ranking) which populations $s_j$ out of a given $n>1$ populations should we sample broodstock from and in what relative proportions $\mathbf{c}^\star$, inorder to minimize genetic co-ancenstry (or maximize genetic diversity) with the least diminishing returns in an offspring population. 
 
-Input data is either a *set of populations that could be sampled from (with known allele frequencies at a common set of loci)*, or a *co-ancestry matrix*. The recommended $\bar{k}$ number out of $n$ populations to combine are given in the set $\mathcal{H}_{\bar{k}}\subseteq\mathcal{H}^\star$.
+Input data is either a *set of populations that could be sampled from (with known allele frequencies at a common set of loci)*, or a *co-ancestry matrix*. The optimum ${k}^\star$ size out of $n$ populations to combine are given in the set $\mathcal{H}_{{k}^\star}\subset\mathcal{H}$.
 
 <p align="center">
 <picture>
@@ -15,11 +15,13 @@ Input data is either a *set of populations that could be sampled from (with know
 </picture>
 <p>
 
-Developed with the application of creating base populations for aquaculture breeding programs in mind. The figure above, shows the result for a given $n=25$ population of allele frequencies. It shows that a recommended population size of $\bar{k}=2$ minimizes co-ancestry (homozygosity) with the least diminishing returns. This corresponds to a $92\\%$ reduction in redundancy. 
+Developed with the application of creating base populations for aquaculture breeding programs in mind. The figure above, shows the result for a given $n=25$ population of allele frequencies. It shows that a optimum population size of ${k}^\star=5$ minimizes co-ancestry (homozygosity) or maximizes diversity. 
+
+The optimum ${k}^\star=5$ can be viewed as an upper bound on the point of diminishing returns. This corresponds to a $80\\%$ reduction in redundancy. 
 
 This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
 
-Learning of the relative optimum contributions (see figure below) in the $25$-population set gave an optimum population size $k^\star=5$. Further optimizing this for the point of diminishing returns led to $\bar{k}=2$.
+The relative contributions of the optimum population combination size $k^\star=5$ in the $25$-population is illustrated below. 
 <p align="center">
 <picture>
   <source style="mix-blend-mode: luminosity;" media="(prefers-color-scheme: dark)" srcset="static/svdirs/dev-session/alle_frq_dirs/sthd_af/ctrbs_bar.png" width="300">
