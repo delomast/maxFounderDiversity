@@ -120,7 +120,7 @@ def writetxt_opt(summ1, kresultpath):
                   str(summ1['csel_vals'][i])]) + "\n")  
       for i in range(0, summ1['ko']) ]
 
-def he_plt(PLOT_PATH, helist, k_rec, th):
+def he_plt(args, PLOT_PATH, helist, k_rec, th):
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
     figsz = (0.4, 0.25)
@@ -128,11 +128,19 @@ def he_plt(PLOT_PATH, helist, k_rec, th):
     figh = plt.figure(figsize=figsz,
           tight_layout=True, dpi=dpi,clear=True)
     ax = plt.gca()
-    ax.plot(th, helist, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{He^\star}$')
-    ax.plot(th[k_rec-1], helist[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
+    ax.plot(th, helist, alpha=0.9, linewidth=csts['LW'])
+    ax.plot(th[k_rec-1], helist[k_rec-1], marker='x', linewidth=csts['LW'], label=r'${k}^\star$', markersize=0.1)
+    
+    lims = ax.get_ylim()
+    uc = 1-0.5*args.A.mean().item()
+    if lims[0] < uc:  
+      ax.set_ylim(bottom=uc)      
+      if lims[1] > 1:
+        plt.ylim(top=helist[k_rec-1]+0.0003)
+    
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
 
-def ho_plt(PLOT_PATH, cm_list, k_rec, th):
+def ho_plt(args, PLOT_PATH, cm_list, k_rec, th):
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
     figsz = (0.4, 0.25)
@@ -140,51 +148,70 @@ def ho_plt(PLOT_PATH, cm_list, k_rec, th):
     figh = plt.figure(figsize=figsz,
           tight_layout=True, dpi=dpi,clear=True)
     ax = plt.gca()
-    ax.plot(th, cm_list, alpha=0.9, linewidth=csts['LW'], label=r'$\mathrm{Ho^\star}$')
-    ax.plot(th[k_rec-1], cm_list[k_rec-1], marker='x', linewidth=csts['LW'], label=r'$\bar{k}$', markersize=0.1)
+    ax.plot(th, cm_list, alpha=0.9, linewidth=csts['LW'])
+    ax.plot(th[k_rec-1], cm_list[k_rec-1], marker='x', linewidth=csts['LW'], label=r'${k}^\star$', markersize=0.1)
+
+    lims = ax.get_ylim()
+    uc = 0.5*args.A.mean().item()
+    if lims[1] > uc:
+      plt.ylim(top=uc)
+      if lims[0] < 0:
+        plt.ylim(bottom=cm_list[k_rec-1]-0.0003)
+
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim1_plt", r'size, $k$', r'expected homozygosity', int=True, dpi=dpi)
 
 def ana_rdim(PLOT_PATH, args, summ1, ismatrix):
-    atids = summ1['csel_ids'][:1]
-    Ak = 0.5*args.A[atids,:][:,atids]
-    cm_list = [Ak.item()]
-    cts = {}
-    for kn in range(2, summ1['ko']):
-      argsn = copy.deepcopy(args)
-      argsn.debug = False
-      atids = summ1['csel_ids'][:kn]
-      Ak = 0.5*argsn.A[atids,:][:,atids]
+    
+    if not args.noplts:
+      atids = summ1['csel_ids'][:1]
+      Ak = 0.5*args.A[atids,:][:,atids]
+      cm_list = [Ak.item()]
+      cts = {}
+      for kn in range(2, summ1['ko']):
+        argsn = copy.deepcopy(args)
+        argsn.debug = False
+        atids = summ1['csel_ids'][:kn]
+        argsn.A = args.A[atids,:][:,atids]
+        argsn.n = kn
 
-      mdln, coan_val, costs_uc = gp1(argsn)  
-      summn = summarydict(argsn, mdln.tf(), ismatrix)
+        mdln, coan_val, costs_uc = gp1(argsn)  
+        summn = summarydict(argsn, mdln.tf(), ismatrix)
 
-      cm_list.append(summn['coan'].item())
-      cts[kn] = summn['csel_vals']
+        cm_list.append(summn['coan'].item())
+        cts[kn] = summn['csel_vals']
 
-    cm_list.append(summ1['coan'].item())
-    cts[summ1['ko']] = summ1['csel_vals']
+      cm_list.append(summ1['coan'].item())
+      cts[summ1['ko']] = summ1['csel_vals']
 
-    # choose dimnishing return pop. size.
-    he = 1-np.array(cm_list)
-    helist = list(he)
-    k_rec = np.argmax(he)+1
-    th = np.arange(1, len(cm_list)+1)
+      # choose dimnishing return pop. size.
+      he = 1-np.array(cm_list)
+      helist = list(he)
+      k_rec = np.argmax(he)+1
+      th = np.arange(1, len(cm_list)+1)
+    else:
+       k_rec = summ1['ko']
 
     # write summary of:
     kresultpath = f"{PLOT_PATH}/ks"
     # opt. ctrbs. to .txt
     writetxt_opt(summ1, kresultpath)     
-    # dim. ctrbs. to .txt
-    writetxt_dim(summ1, k_rec, kresultpath)    
+    # # dim. ctrbs. to .txt
+    # writetxt_dim(summ1, k_rec, kresultpath)    
 
     # plot
     if not args.noplts:
-      ho_plt(PLOT_PATH, cm_list, k_rec, th)
-      he_plt(PLOT_PATH, helist, k_rec, th)
+      ho_plt(args, PLOT_PATH, cm_list, k_rec, th)
+      he_plt(args,PLOT_PATH, helist, k_rec, th)
 
     return k_rec
 
-def cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp):
+def cmp_costs(args, PLOT_PATH, 
+              svlists, allf, cvxf, tcvx, tsqp):
+    
+    ucost = 0.5*args.A.mean().item()
+    if args.debug:
+       print('uniform cost', ucost)
+
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
     figsz = (0.4, 0.25)
@@ -193,9 +220,9 @@ def cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp):
           tight_layout=True, dpi=dpi,clear=True)
     ax = plt.gca()
     # ax.plot(svlists.t, svlists.clmb_t, alpha=0.3, linewidth=csts['LW'], label=r'$0.5*\lambda$')
-    ax.plot(tcvx, cvxf, alpha=0.3, linewidth=csts['LW'], label='cvx')
-    ax.plot(tsqp, allf['slsqp'], alpha=0.3, linewidth=csts['LW'], label='slsqp')
-    ax.plot(svlists.t, svlists.cost_c_t, alpha=0.9, linewidth=csts['LW'], label='ours')
+    ax.plot([0,]+tcvx, [ucost,]+cvxf, alpha=0.3, linewidth=csts['LW'], label='cvx')
+    ax.plot([0,]+tsqp, [ucost,]+allf['slsqp'], alpha=0.3, linewidth=csts['LW'], label='slsqp')
+    ax.plot([0,]+svlists.t, [ucost,]+svlists.cost_c_t, alpha=0.9, linewidth=csts['LW'], label='ours')
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/coan_t", r'iterations, $t$',r'cost', int=True, dpi=dpi)
     return dpi
 
@@ -226,15 +253,19 @@ def ctrbs_bar(PLOT_PATH, summ1, dpi):
 
 
 # main
-def rdim_opt(cfgs, POP_FILES=None, ismatrix=False):
+def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
     
   SERVER_ROOT = Path(__file__).parents[0]
   PLOT_PATH = (SERVER_ROOT / cfgs["S_PLOT_PATH"]).resolve()
   os.makedirs(PLOT_PATH, exist_ok=True)
 
-  if POP_FILES is None:
+  if POP_FILES is None and SCRATCH is None:
      DATA_ROOT = cfgs["DATA_PATH"]
      POP_FILES = glob.glob(f"{DATA_ROOT}/*")
+  
+  elif POP_FILES is None and SCRATCH is not None:
+     DATA_ROOT = (SERVER_ROOT / SCRATCH ).resolve()
+     POP_FILES = glob.glob(f"{DATA_ROOT}/*.frq")
      
 
   if not ismatrix:
@@ -256,12 +287,14 @@ def rdim_opt(cfgs, POP_FILES=None, ismatrix=False):
     assert args.n == data_ldr.neff
 
   # print("Epoch: " + str(epoch+1)) 
+  print(f"{('~~~~')*20}")
   walltime = time.time()
   
   ''' LEARN RELATIVE CONTRIBUTIONS OF EACH POPULATION. '''
   if not ismatrix:
     # load dataset, and dataloader, full pass over data
     for (b_idx, batch) in enumerate(data_ldr): pass
+    # print("epoch: " + str(epoch) + "   batch: " + str(b_idx)) 
     # homozygozity
     args.A = check_fix_psd(batch[0])
   else:
@@ -279,39 +312,37 @@ def rdim_opt(cfgs, POP_FILES=None, ismatrix=False):
     edingetal_sel(args.A, PLOT_PATH)
 
   # print('\n**GP1**')
-  mdl_gp1, coan_val, costs_uc = gp1(args, svlists)  
-  summ1 = summarydict(args, mdl_gp1.tf(), ismatrix)
+  mdl, coan_val, costs_uc = gp1(args, svlists)  
+  summ1 = summarydict(args, mdl.tf(), ismatrix)
   
   if args.debug:
-    print(mdl_gp1)
-    print('metric', coan_val, 'lambda', mdl_gp1.lmda.item())
+    print(mdl)
+    print('metric', coan_val, 'lambda', mdl.lmda.item())
     print('costs: [cost_u, dcost_u, cost_c]',  costs_uc)
-    print(mdl_gp1.param_c.sum().item(), 
-          'sum', mdl_gp1.tf().sum().item(), 
-          'metric', mdl_gp1.coan_metric_tf().item(), 
-          'cost',mdl_gp1.quad_cost_sum1_tf().item()
+    print(mdl.param_c.sum().item(), 
+          'sum', mdl.tf().sum().item(), 
+          'metric', mdl.coan_metric_tf().item(), 
+          'cost',mdl.quad_cost_sum1_tf().item()
         )
     
     print(f"avg. kinship: {summ1['coan'].item()}")
 
   # detach().numpy(force=True).flatten())
   dpi = 1900
-  if args.debug:
-    dpi = cmp_costs(PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
-
-  if not args.noplts:
+  if args.debug and not args.noplts:
+    dpi = cmp_costs(args, PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
     ctrbs_bar(PLOT_PATH, summ1, dpi)
 
   # Optimum Contribution Lists
-  # if args.debug:
-  #   print('gp1')
-  #   print(trunc(mdl_gp1.tf().detach().numpy(),5).T.tolist()[0])
-  #   # print('mdlo.y')
-  #   # print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
-  #   print('cvx')
-  #   print(trunc(np.where(np.array(sol['x']) < 1e-5, 0, np.array(sol['x'])),5).T.tolist()[0])
-  #   print('slsqp')
-  #   print(trunc(answr['slsqp'].x, 5).T.tolist())
+  if args.debug:
+    print('gp1')
+    print(trunc(mdl.tf().detach().numpy(),5).T.tolist()[0])
+    # print('mdlo.y')
+    # print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
+    print('cvx')
+    print(trunc(np.where(np.array(sol['x']) < 1e-5, 0, np.array(sol['x'])),5).T.tolist()[0])
+    print('slsqp')
+    print(trunc(answr['slsqp'].x, 5).T.tolist())
 
   walltime = (time.time() - walltime)/60 
   # print(f"\nTotal batches: {b_idx+1}")
@@ -328,7 +359,7 @@ def rdim_opt(cfgs, POP_FILES=None, ismatrix=False):
   k_rec = ana_rdim(PLOT_PATH, args, summ1, ismatrix)
   walltime = (time.time() - walltime)/60 
   # print(f"\nTotal batches: {b_idx+1}")
-  print(f"time elapsed: {walltime:.2f}-mins", ', recommended population size:', (k_rec, summ1['ko']) ) 
+  print(f"time elapsed: {walltime:.2f}-mins", ', recommended population size:', k_rec) 
 
   print('Done!')
   print(f"{('~~~~')*20}")

@@ -62,7 +62,7 @@ else:
   cfgs["NO_MAXSTEPS"] = True
   cfgs["MAXSTEPS"] = 1000
   cfgs["noPlots"] = False
-  cfgs["debug"] = True
+  cfgs["debug"] = False
   # coan_matrix = "coan_matrix_files/co_mat.txt"
   # coan_matrix = "coan_matrix_files/co_mat_sthd.txt"
   coan_matrix = "coan_matrix_files/plink_mat.rel"
@@ -106,7 +106,7 @@ cfgs["S_PLOT_PATH"] = f"cmdlogs"
 shutil.rmtree(cfgs["S_PLOT_PATH"])
  
 # Run!
-k_rec, _ = rdim_opt(cfgs,POP_FILES, ismatrix)
+k_rec, _ = rdim_opt(cfgs, POP_FILES=POP_FILES, ismatrix=ismatrix)
 
   
 
