@@ -121,6 +121,9 @@ def writetxt_opt(summ1, kresultpath):
       for i in range(0, summ1['ko']) ]
 
 def he_plt(args, PLOT_PATH, helist, k_rec, th):
+    if args.noplts:
+       plt.style.use(['no-latex'])
+
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
     figsz = (0.4, 0.25)
@@ -141,6 +144,9 @@ def he_plt(args, PLOT_PATH, helist, k_rec, th):
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
 
 def ho_plt(args, PLOT_PATH, cm_list, k_rec, th):
+    if args.noplts:
+       plt.style.use(['no-latex'])
+       
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
     figsz = (0.4, 0.25)
