@@ -122,7 +122,9 @@ def writetxt_opt(summ1, kresultpath):
 
 def he_plt(args, PLOT_PATH, helist, k_rec, th):
     if args.noplts:
-       plt.style.use(['no-latex'])
+        plt.style.use(['no-latex'])
+        plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
+        plt.rcParams.update({'text.usetex': True,})
 
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
@@ -145,7 +147,9 @@ def he_plt(args, PLOT_PATH, helist, k_rec, th):
 
 def ho_plt(args, PLOT_PATH, cm_list, k_rec, th):
     if args.noplts:
-       plt.style.use(['no-latex'])
+        plt.style.use(['no-latex'])
+        plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
+        plt.rcParams.update({'text.usetex': True,})
        
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
