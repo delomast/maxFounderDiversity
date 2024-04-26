@@ -121,10 +121,8 @@ def writetxt_opt(summ1, kresultpath):
       for i in range(0, summ1['ko']) ]
 
 def he_plt(args, PLOT_PATH, helist, k_rec, th):
-    if args.noplts:
-        plt.style.use(['no-latex'])
-        plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
-        plt.rcParams.update({'text.usetex': True,})
+    # if not args.noplts:
+        # plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
 
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
@@ -146,10 +144,8 @@ def he_plt(args, PLOT_PATH, helist, k_rec, th):
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
 
 def ho_plt(args, PLOT_PATH, cm_list, k_rec, th):
-    if args.noplts:
-        plt.style.use(['no-latex'])
-        plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
-        plt.rcParams.update({'text.usetex': True,})
+    # if not args.noplts:
+    #     plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
        
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
@@ -208,9 +204,9 @@ def ana_rdim(PLOT_PATH, args, summ1, ismatrix):
     # writetxt_dim(summ1, k_rec, kresultpath)    
 
     # plot
-    # if not args.noplts:
-    ho_plt(args, PLOT_PATH, cm_list, k_rec, th)
-    he_plt(args,PLOT_PATH, helist, k_rec, th)
+    if not args.noplts:
+      ho_plt(args, PLOT_PATH, cm_list, k_rec, th)
+      he_plt(args,PLOT_PATH, helist, k_rec, th)
 
     return k_rec
 

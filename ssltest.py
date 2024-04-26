@@ -21,7 +21,7 @@ cfgs["MAX_BATCHSIZE"] = 512
 cfgs["USE_CORR"] = True
 cfgs["NO_MAXSTEPS"] = True
 cfgs["MAXSTEPS"] = 1000
-cfgs["noPlots"] = False
+cfgs["noPlots"] = True
 cfgs["debug"] = False
 
 SCRATCH_FOLDERS = ["alle_frq_dirs/test_af",  "alle_frq_dirs/sthd_af"]
