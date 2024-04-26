@@ -17,9 +17,9 @@ Input data is either a *set of populations that could be sampled from (with know
 
 Developed with the application of creating base populations for aquaculture breeding programs in mind. The figure above, shows the result for a given $n=25$ population of allele frequencies. It shows that a optimum population size of ${k}^\star=5$ minimizes co-ancestry (homozygosity) or maximizes diversity. 
 
-The optimum ${k}^\star=5$ can be viewed as an upper bound on the point of diminishing returns. This corresponds to a $80\\%$ reduction in redundancy. 
+The optimum ${k}^\star$ can be viewed as an upper bound on the recommended population combination size $k\le{k}^\star$. 
 
-This removal of redundancy, would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
+In this case, ${k}^\star=5$ corresponds to a $80\\%$ reduction in redundancy. This would translate to savings in the monetary-cost and time involved with setting up a breeding program than when the whole $n=25$ populations were to be used. 
 
 The relative contributions of the optimum population combination set $\mathcal{H}_{{k}^\star=5}$ in the $25$-population is illustrated below. 
 <p align="center">
