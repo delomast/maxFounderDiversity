@@ -62,7 +62,7 @@ else:
   cfgs["NO_MAXSTEPS"] = True
   cfgs["MAXSTEPS"] = 1000
   cfgs["noPlots"] = False
-  cfgs["debug"] = False
+  cfgs["debug"] = True
   # coan_matrix = "coan_matrix_files/co_mat.txt"
   # coan_matrix = "coan_matrix_files/co_mat_sthd.txt"
   coan_matrix = "coan_matrix_files/plink_mat.rel"
@@ -103,6 +103,7 @@ else:
   
 # cfgs["S_PLOT_PATH"] = f"cmdlogs/{secret_key}/"
 cfgs["S_PLOT_PATH"] = f"cmdlogs"
+os.makedirs(cfgs["S_PLOT_PATH"], exist_ok=True)
 shutil.rmtree(cfgs["S_PLOT_PATH"])
  
 # Run!

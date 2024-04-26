@@ -22,7 +22,7 @@ cfgs["USE_CORR"] = True
 cfgs["NO_MAXSTEPS"] = True
 cfgs["MAXSTEPS"] = 1000
 cfgs["noPlots"] = True
-cfgs["debug"] = False
+cfgs["debug"] = True
 
 SCRATCH_FOLDERS = ["alle_frq_dirs/test_af",  "alle_frq_dirs/sthd_af"]
 for dir in SCRATCH_FOLDERS:

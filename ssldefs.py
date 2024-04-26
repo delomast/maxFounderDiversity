@@ -162,34 +162,33 @@ def ho_plt(args, PLOT_PATH, cm_list, k_rec, th):
 
 def ana_rdim(PLOT_PATH, args, summ1, ismatrix):
     
-    if not args.noplts:
-      atids = summ1['csel_ids'][:1]
-      Ak = 0.5*args.A[atids,:][:,atids]
-      cm_list = [Ak.item()]
-      cts = {}
-      for kn in range(2, summ1['ko']):
-        argsn = copy.deepcopy(args)
-        argsn.debug = False
-        atids = summ1['csel_ids'][:kn]
-        argsn.A = args.A[atids,:][:,atids]
-        argsn.n = kn
+    atids = summ1['csel_ids'][:1]
+    Ak = 0.5*args.A[atids,:][:,atids]
+    cm_list = [Ak.item()]
+    cts = {}
+    for kn in range(2, summ1['ko']):
+      argsn = copy.deepcopy(args)
+      argsn.debug = False
+      atids = summ1['csel_ids'][:kn]
+      argsn.A = args.A[atids,:][:,atids]
+      argsn.n = kn
 
-        mdln, coan_val, costs_uc = gp1(argsn)  
-        summn = summarydict(argsn, mdln.tf(), ismatrix)
+      mdln, coan_val, costs_uc = gp1(argsn)  
+      summn = summarydict(argsn, mdln.tf(), ismatrix)
 
-        cm_list.append(summn['coan'].item())
-        cts[kn] = summn['csel_vals']
+      cm_list.append(summn['coan'].item())
+      cts[kn] = summn['csel_vals']
 
-      cm_list.append(summ1['coan'].item())
-      cts[summ1['ko']] = summ1['csel_vals']
+    cm_list.append(summ1['coan'].item())
+    cts[summ1['ko']] = summ1['csel_vals']
 
-      # choose dimnishing return pop. size.
-      he = 1-np.array(cm_list)
-      helist = list(he)
-      k_rec = np.argmax(he)+1
-      th = np.arange(1, len(cm_list)+1)
-    else:
-       k_rec = summ1['ko']
+    # choose dimnishing return pop. size.
+    he = 1-np.array(cm_list)
+    helist = list(he)
+    k_rec = np.argmax(he)+1
+    th = np.arange(1, len(cm_list)+1)
+  
+    # assert k_rec == summ1['ko']
 
     # write summary of:
     kresultpath = f"{PLOT_PATH}/ks"
@@ -199,9 +198,9 @@ def ana_rdim(PLOT_PATH, args, summ1, ismatrix):
     # writetxt_dim(summ1, k_rec, kresultpath)    
 
     # plot
-    if not args.noplts:
-      ho_plt(args, PLOT_PATH, cm_list, k_rec, th)
-      he_plt(args,PLOT_PATH, helist, k_rec, th)
+    # if not args.noplts:
+    ho_plt(args, PLOT_PATH, cm_list, k_rec, th)
+    he_plt(args,PLOT_PATH, helist, k_rec, th)
 
     return k_rec
 
@@ -275,7 +274,7 @@ def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
 
   args = Props(pop_files=POP_FILES, n=n_, noplts=cfgs["noPlots"],
               use_cuda=False, use_corr=cfgs["USE_CORR"], max_steps=cfgs["MAXSTEPS"], no_maxsteps=cfgs["NO_MAXSTEPS"],
-              max_batchsize=int(cfgs["MAX_BATCHSIZE"]), err_opt_acc=1e-15, debug=cfgs["debug"])
+              max_batchsize=int(cfgs["MAX_BATCHSIZE"]), err_opt_acc=1e-6, debug=cfgs["debug"])
   
   svlists = Props(t=[],he_t=[], clmb_t=[], cost_u_t=[], dcost_u_t=[], cost_c_t=[], dcost_c_t=[], lr_t=[], bt_t=[])
 
@@ -285,7 +284,7 @@ def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
   if not ismatrix:
     data_ldr = PopDatasetStreamerLoader(args.pop_files,args.n,args.max_batchsize)
     assert args.n == data_ldr.neff
-
+    
   # print("Epoch: " + str(epoch+1)) 
   print(f"{('~~~~')*20}")
   walltime = time.time()
@@ -359,7 +358,7 @@ def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
   k_rec = ana_rdim(PLOT_PATH, args, summ1, ismatrix)
   walltime = (time.time() - walltime)/60 
   # print(f"\nTotal batches: {b_idx+1}")
-  print(f"time elapsed: {walltime:.2f}-mins", ', recommended population size:', k_rec) 
+  print(f"time elapsed: {walltime:.2f}-mins", ', recommended population size: <=', k_rec) 
 
   print('Done!')
   print(f"{('~~~~')*20}")

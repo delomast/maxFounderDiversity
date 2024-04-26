@@ -643,9 +643,20 @@ class CommonSets():
         # input lowpass parameter estimation
         
         if self.beta_cfg.auto and step > 1:
+
+            if step < 1:
+                vidx = self.pos_idxs[:,0]
+                m = m_t[vidx]
+                g = g_t[vidx]
+                go = g_to[vidx]
+            else:
+                m = m_t
+                g = g_t
+                go = g_to   
+
             if not self.lpf.tensor_lists:
-                num_val = g_t.T.mm(g_t-g_to)   
-                den_val = m_t.T.mm(g_to)
+                num_val = g.T.mm(g-go)   
+                den_val = m.T.mm(go)
                 # approxs.
                 num_val.div_((num_val + den_val).add_(self.dev_eps))
                 return num_val[0].abs()
@@ -665,28 +676,30 @@ class CommonSets():
         # linear correlation estimate update  
         # can we estimate this more accurately?
 
-        if not self.lpf.tensor_lists:
+        if step < 1:
+            vidx = self.pos_idxs[:,0]
+            A = self.mdl.A[vidx,:][:,vidx]
+            m = m_t[rpl][vidx]
+            g = g_t[rpl][vidx]
+        else:
             A = self.mdl.A
-            numa_val = m_t[rpl].T.mm(g_t[rpl])
-            dena_val = m_t[rpl].T.mm(A.mm(m_t[rpl]))
+            m = m_t[rpl]
+            g = g_t[rpl]
 
-            numb_val = m_t[rpl].T.mm(A.mm(g_t[rpl]))
-            denb_val = m_t[rpl].T.mm((A*A).mm(m_t[rpl]))        
+        if not self.lpf.tensor_lists:
+            numa_val = m.T.mm(g)
+            dena_val = m.T.mm(A.mm(m))  
             # approxs.
-            numa_val.div_(dena_val.add(self.dev_eps))
-            numb_val.div_(denb_val.add(self.dev_eps))
-            
+            numa_val.div_(dena_val.add(self.dev_eps))            
 
-            if self.dev_beta_lr in [0, 1]:
-                bt_lr = self.dev_beta_lr 
-            else:   
-                pt = (self.dev_epp)/(step + (self.dev_epp-self.fone))
-                bt_lr = self.dev_beta_lr*(1-pt)
-
-            lrat = (bt_lr*numa_val) + ((1-bt_lr)*numb_val) 
+            # if self.dev_beta_lr in [0, 1]:
+            #     bt_lr = self.dev_beta_lr 
+            # else:   
+            #     pt = (self.dev_epp)/(step + (self.dev_epp-self.fone))
+            #     bt_lr = self.dev_beta_lr*(1-pt)
 
             # abs. val projection. to ensure positive rates.
-            alpha_hat_t = lrat #.abs()    
+            alpha_hat_t = numa_val.abs()    
 
         elif self.lpf.tensor_lists:
                    
@@ -836,6 +849,7 @@ class CommonSets():
         
         # smooth-projection
         if not self.lpf.tensor_lists: 
+            self.pos_idxs = (w_t[rpl] > 0).nonzero()
             # proj.
             param_val = self.smooth_avg_out(step, rpl, w_t[rpl].relu(), w_smth)
 
@@ -883,8 +897,8 @@ class AutoSGM(Optimizer):
     
     def __init__(self, params, mdl, *, 
                  lr_mode=(True,1),
-                 lr_init=1e-3, eps=1e-15, 
-                 beta_cfg=(True, 0., 0.9, 1),
+                 lr_init=1e-3, eps=1e-8, 
+                 beta_cfg=(True, 0.1, 0.1, 0.9),
                  rcf_cfg=((False), (True,True), (1, 1, 0)), 
                  loglr_step:Optional[bool]=None,
                  maximize:bool=False, foreach:bool=False):  

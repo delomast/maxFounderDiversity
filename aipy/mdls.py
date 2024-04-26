@@ -11,7 +11,7 @@ import torch.nn as nn
 class ILinear(nn.Module):
     """ """
 
-    def __init__(self, dim=2, eps=1E-15):
+    def __init__(self, dim=2, eps=1e-15):
         super().__init__()
         self.dim = dim
         ones_vec = torch.ones((dim, 1), dtype=torch.float)
@@ -96,9 +96,8 @@ class ILinear(nn.Module):
         compute diagonal preconditioner
         """
         dd = 1 / (torch.diag(A).sqrt())
-        # skip normalizing with diagonal, if diag elements are ~ 1
-        if (1 - (dd).mean()).abs() < epsln:
-            use_corr = False
+        # optional, skip normalizing with diagonal, if diag elements are ~ 1
+        if (1 - (dd).mean()).abs() < epsln: use_corr = False
 
         if use_corr:
             return torch.diag(dd)

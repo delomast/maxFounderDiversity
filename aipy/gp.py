@@ -12,12 +12,11 @@ def gp1(args, svlists=None):
     zero_hits = 0
 
     # mdl: linear model
-    mdl = ILinear(dim=args.n, eps=args.err_opt_acc)
+    mdl = ILinear(dim=args.n)
     if args.use_cuda: mdl.cuda()
     mdl.data_matrix(args.A, args.use_corr)
     # opt:asgmq
-    opt = AutoSGM([mdl.param_u], mdl,
-                  lr_mode=(True, 1), beta_cfg=(True, 0.1, 0.1, 1),)
+    opt = AutoSGM([mdl.param_u], mdl)
 
     # init eval: obj
     for t in range(1, args.max_steps+1):
