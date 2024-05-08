@@ -23,7 +23,7 @@ def gp1(args, svlists=None):
         # learn: optimize params.
         # - backprop.
         opt.zero_grad(set_to_none=True)
-        cost_u = mdl.quad_cost_unc(u=mdl.param_u.relu()) # opt.wsmth
+        cost_u = mdl.quad_cost_unc(mdl.param_u)
         cost_u.backward()
         # - one SGM step and projection
         opt.step(rank=1)

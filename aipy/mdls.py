@@ -31,6 +31,8 @@ class ILinear(nn.Module):
 
         self.last_cost_u = torch.tensor(torch.inf, dtype=torch.float)
         self.last_cost_c = torch.tensor(torch.inf, dtype=torch.float)
+        self.bto = 0
+        self.register_buffer("oldc", torch.zeros((dim, 1), dtype=torch.float))
 
         @torch.no_grad()
         def weight_reset(m: nn.Module):
@@ -128,6 +130,10 @@ class ILinear(nn.Module):
         """
         # f = 0.5*u'Au - b'u
         if u is None: u = self.param_u
+
+        u = (self.bto*self.oldc) + (1-self.bto)*u.relu()
+        # u = u.relu()
+
         return (0.5*(u.T.mm(self.A.mm(u)))) - (self.b.T.mm(u)) + 1
 
     @torch.no_grad()
@@ -174,4 +180,4 @@ class ILinear(nn.Module):
         """
         if inp is None:
             inp = self.param_c
-        return (self.M.mm(inp)).relu()
+        return (self.M.mm(inp)) #.relu()

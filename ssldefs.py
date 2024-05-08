@@ -97,7 +97,7 @@ def summarydict(args, c_t, ismatrix= False):
   if args.debug:
     # Print out ...
     print()
-    print(result['dftable'])
+    # print(result['dftable'])
     print(result['dfsel'])
     
   return result
@@ -121,9 +121,6 @@ def writetxt_opt(summ1, kresultpath):
       for i in range(0, summ1['ko']) ]
 
 def he_plt(args, PLOT_PATH, helist, k_rec, th):
-    # if not args.noplts:
-        # plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
-
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
     figsz = (0.4, 0.25)
@@ -144,8 +141,6 @@ def he_plt(args, PLOT_PATH, helist, k_rec, th):
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/rdim2_plt", r'size, $k$', r'expected heterozygosity', int=True, dpi=dpi)
 
 def ho_plt(args, PLOT_PATH, cm_list, k_rec, th):
-    # if not args.noplts:
-    #     plt.rcParams.update({'text.usetex': plt.rcParamsDefault['text.usetex']})
        
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
@@ -346,8 +341,12 @@ def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
     # print(trunc(y_opt.detach().numpy(), 5).T.tolist()[0])
     print('cvx')
     print(trunc(np.where(np.array(sol['x']) < 1e-5, 0, np.array(sol['x'])),5).T.tolist()[0])
+    cc = np.array(sol['x'])
+    print('cvx:len',len(cc[cc > 1e-3]))
     print('slsqp')
     print(trunc(answr['slsqp'].x, 5).T.tolist())
+    cc = np.array(answr['slsqp'].x)
+    print('slsqp:len',len(cc[cc > 1e-3]))
 
   walltime = (time.time() - walltime)/60 
   # print(f"\nTotal batches: {b_idx+1}")

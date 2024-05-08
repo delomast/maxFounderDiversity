@@ -439,8 +439,7 @@ class CommonSets():
         self.misc_cfg = misc_cfg
         self.down = misc_cfg.down
         self.lrlogstep = misc_cfg.lrlogstep
-        self.epp = misc_cfg.epp
-        self.fwd = misc_cfg.fwd
+        self.autolr = misc_cfg.autolr
         #
         self.beta_cfg = beta_cfg
         #        
@@ -460,9 +459,7 @@ class CommonSets():
         self.dev_lr_init = self.gen_cfg.lr_init*fone
         self.dev_beta_i = self.beta_cfg.beta_i*fone
         self.dev_beta_o = self.beta_cfg.beta_o*fone
-        self.dev_beta_lr = self.beta_cfg.beta_lr*fone
         self.dev_eps = self.gen_cfg.eps*fone
-        self.dev_epp = self.epp*fone
         self.levels = self.p    
         #
         self.dev_fone = 1*fone
@@ -487,7 +484,7 @@ class CommonSets():
         else:
             rststr = f"[rcw={self.rcf_cfg.win}, half={self.rcf_cfg.half}, auto={self.rcf_cfg.auto}, init-width={self.rcf_cfg.width}, up={self.rcf_cfg.upfact}, n={self.rcf_cfg.n}, l={2*self.rcf_cfg.a - 1} ]"
         
-        autostr = f"[init_lr={self.gen_cfg.lr_init:.5g}, forward={self.fwd}, step_fact={self.misc_cfg.epp}]"
+        autostr = f"[init_lr={self.gen_cfg.lr_init:.5g}, auto={self.autolr}, mode={self.misc_cfg.lrmode}]"
         
         filtstr = f"[lpfs. [in, out, lr] : {self.beta_cfg.beta_i:.9g}, {self.beta_cfg.beta_o:.9g}, {self.beta_cfg.beta_lr:.9g}]"
         
@@ -521,6 +518,7 @@ class CommonSets():
 
             # compute bt_in.
             betain = self.bt_compute(step, grad_smth_lev[pl], gin_t, grad_in_lev_t1[pl]) 
+            self.betain = betain
 
             # smooth gradient input [lowpass]  
             m_t, grad_smth_lev[pl] = self.lpf.compute(in_t=gin_t, x=grad_smth_lev[pl], beta=betain, step=step, mode=1)
@@ -572,7 +570,7 @@ class CommonSets():
         
         if self.beta_cfg.auto and step > 1:
 
-            if step < 1:
+            if self.misc_cfg.lrmode == 1:
                 vidx = self.pos_idxs[:,0]
                 m = m_t[vidx]
                 g = g_t[vidx]
@@ -585,8 +583,9 @@ class CommonSets():
             if not self.lpf.tensor_lists:
                 num_val = g.T.mm(g-go)   
                 den_val = m.T.mm(go)
-                # approxs.
+
                 num_val.div_((num_val + den_val).add_(self.dev_eps))
+
                 return num_val[0].abs()
             
             elif self.lpf.tensor_lists:
@@ -601,33 +600,27 @@ class CommonSets():
         computes an iteration-dependent learning rate that approximates an optimal choice of step-size.
         '''
         # learning rate estimation
-        # linear correlation estimate update  
-        # can we estimate this more accurately?
-
-        if step < 1:
-            vidx = self.pos_idxs[:,0]
-            A = self.mdl.A[vidx,:][:,vidx]
-            m = m_t[rpl][vidx]
-            g = g_t[rpl][vidx]
-        else:
-            A = self.mdl.A
-            m = m_t[rpl]
-            g = g_t[rpl]
-
         if not self.lpf.tensor_lists:
-            numa_val = m.T.mm(g)
-            dena_val = m.T.mm(A.mm(m))  
-            # approxs.
-            numa_val.div_(dena_val.add(self.dev_eps))            
+            if self.autolr:
+                if self.misc_cfg.lrmode == 1 and step > 1:
+                    vidx = self.pos_idxs[:,0]
+                    A = self.mdl.A[vidx,:][:,vidx]
+                    m = m_t[rpl][vidx]
+                    g = g_t[rpl][vidx]
+                else:
+                    A = self.mdl.A
+                    m = m_t[rpl]
+                    g = g_t[rpl]
 
-            # if self.dev_beta_lr in [0, 1]:
-            #     bt_lr = self.dev_beta_lr 
-            # else:   
-            #     pt = (self.dev_epp)/(step + (self.dev_epp-self.fone))
-            #     bt_lr = self.dev_beta_lr*(1-pt)
+                numa_val = m.T.mm(g)
+                dena_val = m.T.mm(A.mm(m))  
+                # approxs.
+                numa_val.div_(dena_val.add(self.dev_eps))            
 
-            # abs. val projection. to ensure positive rates.
-            alpha_hat_t = numa_val.abs()    
+                # abs. val projection. to ensure positive rates.
+                alpha_hat_t = numa_val.abs()    
+            else:
+                alpha_hat_t = self.dev_lr_init
 
         elif self.lpf.tensor_lists:
                    
@@ -650,16 +643,16 @@ class CommonSets():
             torch._foreach_mul_(m_t[rpl], a_t*self.dev_fone)
             torch._foreach_add_(wrpl, m_t[rpl])
 
-    # Smooth/Averaged output
-    def smooth_avg_out(self, step, rpl, w_t, w_smth):
+    # Smooth output
+    def smooth_out(self, step, rpl, w_t, w_smth, c_t):
         '''
-        Smooth/Averaged output
+        Smooth output
         '''
         if rpl == 0:
-            # smooth out/average. [lowpass]
+            # smooth out. [lowpass]
             if self.dev_beta_o > 0:                    
                 
-                beta_o = self.dev_beta_o
+                betaout = self.dev_beta_o
                 
                 if not self.lpf.tensor_lists: 
                     if isinstance(w_t, list):
@@ -667,17 +660,26 @@ class CommonSets():
                     else:
                         wrplin = 1*w_t
 
-                    wst, w_smth[rpl] = self.lpf.compute(in_t=wrplin, x=w_smth[rpl], beta=beta_o, step=step, mode=6)
-                    param_val = 1*wst
-                    # param_val = 0.1*wst + 0.9*wrplin
+                    if self.beta_cfg.auto:
+                        cold = 1*c_t[rpl]
+
+                        cnew, c_t[rpl] = self.lpf.compute(in_t=self.fone, x=c_t[rpl], beta=self.betain, step=step, mode=6)
+
+                        betaout = self.betain.mul(cold.div(cnew)) 
+
+                        self.mdl.bto = betaout
+                        self.mdl.oldc = 1*w_smth[rpl]
+                    
+                    wst, w_smth[rpl] = self.lpf.compute(in_t=wrplin, x=w_smth[rpl], beta=betaout, step=step, mode=6)
+
+                    param_val = 1*wst # param_val = 0.1*wst + 0.9*wrplin
 
                 else:
                     wrpl = [ allist[rpl] for allist in w_t]          
                     wsmthrpl = [ allist[rpl] for allist in w_smth]
                     wrplin = torch._foreach_mul(wrpl, 1)
 
-                    wst, wsmthrpl = self.lpf.compute(in_t=wrplin, x=wsmthrpl, beta=beta_o, step=step, mode=6)
-                    param_val = torch._foreach_mul(wst, 1)
+                    pass
                     
             else:
                 if isinstance(w_t, list):
@@ -773,23 +775,25 @@ class CommonSets():
                            
     # Projection
     @torch.no_grad()
-    def project(self, rpl, step, param, w_t, w_smth):
+    def project(self, rpl, step, param, w_t, w_smth, c_t):
         
         # smooth-projection
         if not self.lpf.tensor_lists: 
             self.pos_idxs = (w_t[rpl] > 0).nonzero()
             # proj.
-            param_val = self.smooth_avg_out(step, rpl, w_t[rpl].relu(), w_smth)
+            param_val = self.smooth_out(step, rpl, w_t[rpl].relu(), w_smth, c_t)
 
             self.mdl.lmda = 1/(self.mdl.ones_vec.T.mm(self.mdl.M.mm(param_val)))
 
         else:
             wrpl = [ allist[rpl] for allist in w_t]          
             wsmthrpl = [ allist[rpl] for allist in w_smth]
+
+            pass
     
         # pass update to the neural network's placeholder.
         self.pass_to_nn(rpl, param, w_t[rpl]) # self.mdl.param_u
-
+        # pass projection to mdl
         self.pass_to_nn(rpl, self.mdl.param_c, param_val.mul(self.mdl.lmda))
 
         
@@ -825,8 +829,8 @@ class AutoSGM(Optimizer):
     
     def __init__(self, params, mdl, *, 
                  lr_mode=(True,1),
-                 lr_init=1e-3, eps=1e-8, 
-                 beta_cfg=(True, 0.1, 0.1, 0.9),
+                 lr_init=1e-3, eps=1e-10, 
+                 beta_cfg=(True, 0., 0.),
                  rcf_cfg=((False), (True,True), (1, 1, 0)), 
                  loglr_step:Optional[bool]=None,
                  maximize:bool=False, foreach:bool=False):  
@@ -840,17 +844,16 @@ class AutoSGM(Optimizer):
          
          `mdl` (`object`) model object with `A`, `b`, `ones_vec`, `lmda`, `param_u`, `param_c` as properties. `params` must be the iterable of `param_u` in `mdl`.
 
-         `lr_mode` (`tuple`, optional). (forward lr computation, stepping factor) (default: `(True, 1)`)
+         `lr_mode` (`tuple`, optional). (autolr,  mode) (default: `(True, 1)`)
              
          `lr_init` (`float`, optional): used as initial learning rate value, it will be varied iteratively when `autolr` is `True`. (default: `1e-3`).
          
          `eps` (`float`, optional): a small positive constant used to condition/stabilize the gradient normalization operation (default: `1e-8`).
 
-         `beta_cfg` (`tuple`, optional): configures lowpass parameters (default: `(True, 0.9, 0.9, 1)`) => (`auto, beta_i, beta_o, beta_lr`). 
-         `auto` (`bool`): auto tune beta_i. (default: `True`).
-         `beta_i` (`float`): smoothing lowpass pole param for input gradient, often less or equal to `0.9`. (default:`0.9`).
-         `beta_o` (`float`): smoothing lowpass pole param for output projection, often greater or equal to `0`. (default:`0.9`).  
-         `beta_lr` (`int`|`float`, optional): use to select the lr approximation (default: `1`). expects `0` or `1` or a real value in (0,1) to switch between two approximations.         
+         `beta_cfg` (`tuple`, optional): configures lowpass parameters (default: `(True, 0., 0.)`) => (`auto, beta_i, beta_o`). 
+         `auto` (`bool`): auto tune. (default: `True`).
+         `beta_i` (`float`): smoothing lowpass pole param for input gradient, often less or equal to `0.9`. (default:`0.`).
+         `beta_o` (`float`): smoothing lowpass pole param for output projection, often greater or equal to `0`. (default:`0.`).    
 
          `rcf_cfg` (`tuple`, optional) use a raised cosine window to spectrally smooth the input. (default: `((False),(True,True),(1, 1, 0))` => `((active), (half_win, auto_init_width), (up, order, min))`
              active (`bool`): use to activate or deactivate the window function. (default: `False`).
@@ -880,11 +883,13 @@ class AutoSGM(Optimizer):
         self.lpf = LPF(foreach=foreach)
         self.nodes = 1
 
-        misc_cfg = Props(down=False, lrlogstep=loglr_step, 
-                       fwd=lr_mode[0], epp=lr_mode[1])
+        misc_cfg = Props(down=False, 
+                         lrlogstep=loglr_step, 
+                         autolr=lr_mode[0], lrmode=lr_mode[1])
             
-        beta_cfg = Props(auto=beta_cfg[0],beta_i=beta_cfg[1], beta_o=beta_cfg[2], 
-                       beta_lr=beta_cfg[3])
+        beta_cfg = Props(auto=beta_cfg[0],
+                         beta_i=beta_cfg[1], 
+                         beta_o=beta_cfg[2])
         
         rcf_cfg = Props(win=rcf_cfg[0], half=rcf_cfg[1][0], auto=rcf_cfg[1][1],
                       upfact=rcf_cfg[2][0], rho=1, 
@@ -954,7 +959,7 @@ class AutoSGM(Optimizer):
         weight_list, weight_smth_list = [], []
         grad_list, grad_smth_list, grad_in_list = [],[],[]
         lr_avga_list, lr_avgb_list, bt_in_list = [],[],[]
-        lrm_save_list = []    
+        lrm_save_list, cout_list = [],[]    
             
         for p in group['params']:
             if p.grad is not None:
@@ -986,7 +991,9 @@ class AutoSGM(Optimizer):
                         state['levels'][f'{lev}']['weight_smth'] = p.real.clone(memory_format=torch.preserve_format).detach()     
     
                         # - lr used.          
-                        state['levels'][f'{lev}']["lr_m_save"] = group['lr_init']*torch.ones_like(p, memory_format=torch.preserve_format, device=p.device) # torch.ones((1,), device=p.device)
+                        state['levels'][f'{lev}']["lr_m_save"] = group['lr_init']*torch.ones((1,), device=p.device)
+
+                        state['levels'][f'{lev}']['cout'] = 1*torch.ones((1,), dtype=torch.float, device=p.device)
                     
                 state['step'] += 1
                 steps.append(state['step'])
@@ -994,7 +1001,7 @@ class AutoSGM(Optimizer):
                 # Level Lists for this parameter
                 weight_llist, weight_smth_llist = [], []
                 grad_llist, grad_smth_llist, grad_in_llist = [],[],[]
-                lrm_save_llist = []        
+                lrm_save_llist, cout_llist = [],[]        
                 
                 # -  for all levels
                 for lev in range(1,group['p']+1):
@@ -1006,7 +1013,9 @@ class AutoSGM(Optimizer):
                   weight_smth_llist.append(state['levels'][f'{lev}']['weight_smth'])      
                          
                   # - (history stores, mean and second moment for alpha_hat_t.)
-                  lrm_save_llist.append(state['levels'][f'{lev}']['lr_m_save'])       
+                  lrm_save_llist.append(state['levels'][f'{lev}']['lr_m_save'])   
+
+                  cout_llist.append(state['levels'][f'{lev}']['cout'])       
 
                 # List of Level Lists for each 
                 # parameter with a gradient in the ANN.
@@ -1018,8 +1027,9 @@ class AutoSGM(Optimizer):
                 grad_smth_list.append(grad_smth_llist)
                   
                 lrm_save_list.append(lrm_save_llist)
+                cout_list.append(cout_llist)
         
-        pplists = [params_with_grad_list, weight_list, weight_smth_list, grad_list, grad_smth_list, grad_in_list, lrm_save_list]
+        pplists = [params_with_grad_list, weight_list, weight_smth_list, grad_list, grad_smth_list, grad_in_list, lrm_save_list, cout_list]
         
         return com_sets, has_sparse_grad, pplists, steps
         
@@ -1090,7 +1100,7 @@ def _single_tensor_sgm(com_sets:CommonSets, steps: List[Tensor],
     
     assert grad_scale is None and found_inf is None
     
-    params, weight_list, weight_smth_list, grad_list, grad_smth_list, grad_in_list, lrm_save_list = pplists
+    params, weight_list, weight_smth_list, grad_list, grad_smth_list, grad_in_list, lrm_save_list, cout_list = pplists
     
     dtype = params[0].dtype
     device= params[0].device
@@ -1107,7 +1117,7 @@ def _single_tensor_sgm(com_sets:CommonSets, steps: List[Tensor],
 
         w_t = weight_list[i]
         w_smth = weight_smth_list[i]
-
+        c_t = cout_list[i]
         grad = grad_list[i]
         grad_smth = grad_smth_list[i]
         grad_in_t = grad_in_list[i]
@@ -1128,22 +1138,14 @@ def _single_tensor_sgm(com_sets:CommonSets, steps: List[Tensor],
         # back trace for next iteration
         com_sets.back_grade(rpl, grad_in_t, g_t) 
 
-        if com_sets.fwd:
-            # compute lr.
-            alpha_hat_t = com_sets.lr_compute(rpl, step, m_t, g_t)               
-            
-            # integrate: state update
-            com_sets.integrator(w_t, m_t, rpl, alpha_hat_t, a_t) 
-        else:
-            # integrate: state update
-            alpha_hat_t = lrm[rpl]
-            com_sets.integrator(w_t, m_t, rpl, alpha_hat_t, a_t)  
+        # compute lr.
+        alpha_hat_t = com_sets.lr_compute(rpl, step, m_t, g_t)               
+        
+        # integrate: state update
+        com_sets.integrator(w_t, m_t, rpl, alpha_hat_t, a_t) 
 
-            # compute lr.
-            alpha_hat_t = com_sets.lr_compute(rpl, step, m_t, g_t)                 
-            
         # smooth projection and pass back to mdl.
-        com_sets.project(rpl, step, param, w_t, w_smth)
+        com_sets.project(rpl, step, param, w_t, w_smth, c_t)
                
         # log lr
         com_sets.logginglr(rpl, lrm, alpha_hat_t)
