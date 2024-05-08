@@ -223,6 +223,7 @@ def cmp_costs(args, PLOT_PATH,
     ax.plot([0,]+tcvx, [ucost,]+cvxf, alpha=0.3, linewidth=csts['LW'], label='cvx')
     ax.plot([0,]+tsqp, [ucost,]+allf['slsqp'], alpha=0.3, linewidth=csts['LW'], label='slsqp')
     ax.plot([0,]+svlists.t, [ucost,]+svlists.cost_c_t, alpha=0.9, linewidth=csts['LW'], label='ours')
+    # ax.set_xscale('log')
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/coan_t", r'iterations, $t$',r'cost', int=True, dpi=dpi)
     return dpi
 
