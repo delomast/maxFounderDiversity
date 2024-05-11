@@ -329,8 +329,8 @@ def nicefmt3(figh5, ax, csts,name,xlabel=None,ylabel=None, dp=2, int=False, dpi=
     ax.xaxis.set_major_formatter(
                 ticker.FuncFormatter(reformat_large_tick_values))
     
-    def rfsmt(tck, pos=0):
-        return reformat_small_tick_values(tck,dp,pos)
+    # def rfsmt(tck, pos=0):
+    #     return reformat_small_tick_values(tck,dp,pos)
 
     # ax.yaxis.set_major_formatter(
     #             ticker.FuncFormatter(rfsmt))
@@ -338,12 +338,11 @@ def nicefmt3(figh5, ax, csts,name,xlabel=None,ylabel=None, dp=2, int=False, dpi=
     if int:
         ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
 
-
-
     plt.legend(loc='best', ncol=1, mode="shrink", shadow=False, fancybox=False,frameon=False, borderaxespad=0.,prop={'size':1})
     
     ax.margins(y=0.05, tight=True)
     plt.tight_layout(pad=0.1)
+
     # plt.show()
     figpath = f"{name}.png"
     plt.savefig(figpath, dpi=dpi)

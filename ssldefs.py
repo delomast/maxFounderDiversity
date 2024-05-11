@@ -98,7 +98,7 @@ def summarydict(args, c_t, ismatrix= False):
     # Print out ...
     print()
     # print(result['dftable'])
-    print(result['dfsel'])
+    # print(result['dfsel'])
     
   return result
 
@@ -208,9 +208,12 @@ def ana_rdim(PLOT_PATH, args, summ1, ismatrix):
 def cmp_costs(args, PLOT_PATH, 
               svlists, allf, cvxf, tcvx, tsqp):
     
+    def lst2arr2lst(lst):
+        return lst # np.array(lst).tolist()
+
     ucost = 0.5*args.A.mean().item()
     if args.debug:
-       print('uniform cost', ucost)
+        print('uniform cost', ucost)
 
     plt.rcParams['axes.linewidth'] = 0.1
     csts = {'BM':0.5,'LW':0.1, 'AL':1, 'BW':0.15, 'TL':0.92, 'Fy':1, 'Fx':1, 'figsvdir':'','fignm':''}
@@ -220,10 +223,13 @@ def cmp_costs(args, PLOT_PATH,
           tight_layout=True, dpi=dpi,clear=True)
     ax = plt.gca()
     # ax.plot(svlists.t, svlists.clmb_t, alpha=0.3, linewidth=csts['LW'], label=r'$0.5*\lambda$')
-    ax.plot([0,]+tcvx, [ucost,]+cvxf, alpha=0.3, linewidth=csts['LW'], label='cvx')
-    ax.plot([0,]+tsqp, [ucost,]+allf['slsqp'], alpha=0.3, linewidth=csts['LW'], label='slsqp')
-    ax.plot([0,]+svlists.t, [ucost,]+svlists.cost_c_t, alpha=0.9, linewidth=csts['LW'], label='ours')
-    # ax.set_xscale('log')
+
+    ax.plot([0,]+tcvx, lst2arr2lst([ucost,]+cvxf), alpha=0.3, linewidth=csts['LW'], label='cvx')
+    ax.plot([0,]+tsqp, lst2arr2lst([ucost,]+allf['slsqp']), alpha=0.3, linewidth=csts['LW'], label='slsqp')
+    ax.plot([0,]+svlists.t, lst2arr2lst([ucost,]+svlists.cost_c_t), alpha=0.9, linewidth=csts['LW'], label='ours')
+
+    # ax.set_yscale('log')
+
     pla.nicefmt3(figh, ax, csts, f"{PLOT_PATH}/coan_t", r'iterations, $t$',r'cost', int=True, dpi=dpi)
     return dpi
 
@@ -303,14 +309,14 @@ def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
     batch = None
     args.A = check_fix_psd(torch.tensor(POP_FILES, dtype=torch.float))
 
-  if args.debug:
+  if not args.noplts or args.debug:
     # check: sqp
     sol, answr, allx, allf, cvxf = extsolv(args, PLOT_PATH)
     tcvx = list(np.arange(1, len(cvxf)+1))
     tsqp = list(np.arange(1, len(allf['slsqp'])+1))
 
     # check: inversion (unconstr. bounds)
-    edingetal_sel(args.A, PLOT_PATH)
+    # edingetal_sel(args.A, PLOT_PATH)
 
   # print('\n**GP1**')
   mdl, coan_val, costs_uc = gp1(args, svlists)  
@@ -330,7 +336,7 @@ def rdim_opt(cfgs, SCRATCH=None, POP_FILES=None, ismatrix=False):
 
   # detach().numpy(force=True).flatten())
   dpi = 1900
-  if args.debug and not args.noplts:
+  if not args.noplts or args.debug:
     dpi = cmp_costs(args, PLOT_PATH, svlists, allf, cvxf, tcvx, tsqp)
     ctrbs_bar(PLOT_PATH, summ1, dpi)
 

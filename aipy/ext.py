@@ -1,14 +1,17 @@
 import numpy as np
 
-# add scipy here.
+# scipy here
 from scipy import optimize
 
 import cvxopt as opt
+# import mosek
 from cvxopt import matrix, spmatrix, sparse
 from cvxopt.solvers import qp, options
 from cvxopt import blas
 
-def extsolv(args, PLOT_PATH):      
+def extsolv(args, PLOT_PATH):    
+
+    disp = args.debug # and not args.noplts  
   
     n = args.n
     x0 = np.ones((n,1)).flatten()/n
@@ -62,17 +65,18 @@ def extsolv(args, PLOT_PATH):
       my_constraints = ({'type': 'eq', "fun": apply_sum_constraint })
       answr = optimize.minimize(fcst, x0, 
                             method='SLSQP', jac=jac, 
-                            options={'disp': True},
+                            options={'disp': disp},
                             bounds=optimize.Bounds(0,1,True),
-                            constraints=my_constraints, callback=store)      
+                            constraints=my_constraints, callback=store )      
       
       return answr, all_x_i, all_f_i
                  
       
-
+    print('\nSLSQP\n')
     answr['tcsqp'], allx['tcsqp'], allf['tcsqp'] = tcsqp()
     answr['slsqp'], allx['slsqp'], allf['slsqp'] = slsqp()
     
+    print('\nCVX\n')
     # CVX
     Q = matrix(Anp.astype(np.double))
     r = matrix(np.zeros(n))
@@ -92,12 +96,15 @@ def extsolv(args, PLOT_PATH):
       G[k+n,k] = 1.0
       h[k+n] = 1.0
     
-    sol = qp(Q, -r, G, h, A, b)
+    opts = opt.solvers.options
+    options['show_progress'] = disp
+    sol = qp(Q, -r, G, h, A, b, options=opts)
     maxit = sol['iterations']
     cvxf = []
     for it in range(1, maxit+1):
        opts = opt.solvers.options
        opts['maxiters'] = it 
+       options['show_progress'] = False
        sol_it = qp(Q, -r, G, h, A, b, options=opts)
        cvxf.append(sol_it['primal objective'])
 

@@ -31,8 +31,6 @@ class ILinear(nn.Module):
 
         self.last_cost_u = torch.tensor(torch.inf, dtype=torch.float)
         self.last_cost_c = torch.tensor(torch.inf, dtype=torch.float)
-        self.bto = 0
-        self.register_buffer("oldc", torch.zeros((dim, 1), dtype=torch.float))
 
         @torch.no_grad()
         def weight_reset(m: nn.Module):
@@ -100,9 +98,44 @@ class ILinear(nn.Module):
         dd = 1 / (torch.diag(A).sqrt())
         # optional, skip normalizing with diagonal, if diag elements are ~ 1
         if (1 - (dd).mean()).abs() < epsln: use_corr = False
+        
+        
+        # raw diagonal scaling
+        mo = torch.diag(dd)
+        M = mo
+
+        # centered 2-d DFT
+        u = torch.fft.fft2(A)
+        ushift = torch.fft.fftshift(u)
+        # torch.abs(ushift)
+
+        # gaussian filter.
+        sigma, c = self.dim, self.dim/2
+        x = torch.linspace(0, self.dim, self.dim)
+        y = torch.linspace(0, self.dim, self.dim)
+        X, Y = torch.meshgrid(x, y, indexing='xy')
+        Xm, Ym = (X-c)/sigma, (Y-c)/sigma
+        filter = torch.exp(-(Xm**2 + Ym**2))
+        # apply in freq. domain
+        uf = ushift * filter
+        # torch.abs(uf)
+        # smoothed image in spatial domain
+        Af = torch.fft.ifft2(uf)
+        Af = torch.abs(Af)
+
+        # filtered scale
+        mo = torch.diag(1/(torch.diag(Af).sqrt()))
+
+        # modified diagonal scaling
+        un = (u.abs()/u.abs().max())
+        An = mo.mm(Af.mm(mo))
+        a = 1/(torch.diag(un.mm(un))) 
+        b = torch.diag(un.mm(An.mm(un)))
+        ev = torch.diag(1/((a*b).sqrt()))
+        M = mo + (mo.mm(ev.mm(mo)))
 
         if use_corr:
-            return torch.diag(dd)
+            return M
         else:
             return self.M
 
@@ -131,9 +164,7 @@ class ILinear(nn.Module):
         # f = 0.5*u'Au - b'u
         if u is None: u = self.param_u
 
-        u = (self.bto*self.oldc) + (1-self.bto)*u.relu()
-        # u = u.relu()
-
+        u = u.relu()
         return (0.5*(u.T.mm(self.A.mm(u)))) - (self.b.T.mm(u)) + 1
 
     @torch.no_grad()
