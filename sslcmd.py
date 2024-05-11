@@ -24,7 +24,7 @@ if not override:
                       type=str2bool, default=True)
   parser.add_argument("-c", "--MAXSTEPS", help="upper limit on the total number of learning iterations (int)", type=int, default=100)
   parser.add_argument("-m", "--NO_MAXSTEPS", help="don't max-out the total number of learning iterations (bool)", type=str2bool, default=True)
-  parser.add_argument("--noPlots", help="return text output insted of plots and a .json file (saves time)", action=argparse.BooleanOptionalAction) # requires python 3.9+
+  parser.add_argument("--plots", help="enable or disable comparative plots", action=argparse.BooleanOptionalAction) # requires python 3.9+
 
   group = parser.add_mutually_exclusive_group(required=True)
   group.add_argument("--files", 
@@ -47,7 +47,7 @@ if not override:
   cfgs["USE_CORR"] = args.scaler
   cfgs["NO_MAXSTEPS"] = args.NO_MAXSTEPS
   cfgs["MAXSTEPS"] = args.MAXSTEPS
-  cfgs["noPlots"] = args.noPlots
+  cfgs["noPlots"] = not args.plots
   cfgs["debug"] = False
 
   print(args)

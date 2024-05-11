@@ -68,7 +68,10 @@ Install required python packages with the requirements.txt file `pip install -r 
 
 #### Quick Test
 A quick way to test the tool. Run: `python ssltest.py` from the main source-code directory.
-Output results are saved in a temporary directory `cmdlogs`.
+The generated results are saved in a temporary directory `cmdlogs`. 
+
+#### Output
+Inside `cmdlogs`, the selected population ids in the original input file and their respective optimal contributions are saved in a text file.
 
 #### Command Line Interface CLI
 In a terminal window, we provide the command ``sslcmd``. 
@@ -90,8 +93,8 @@ options:
                         upper limit on the total number of learning iterations (int)
   -m NO_MAXSTEPS, --NO_MAXSTEPS NO_MAXSTEPS
                         don't max-out the total number of learning iterations (bool)
-  --noPlots, --no-noPlots
-                        return text output insted of plots and a .json file (saves time)
+  --plots, --no-plots   
+                        enable or disable comparative plots
   --files FILES [FILES ...]
                         list of source files
   --source_dir SOURCE_DIR
@@ -104,12 +107,12 @@ options:
 ##### Example 1
 - ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and configures the tool's data loader with a default batch-size of 1.
+This tells the tool that the allele frequency data files are in a source directory located at `./alle_frq_dirs/sthd_af`.
 
 ##### Example 3
-- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af --noPlots``
+- ``py sslcmd.py --source_dir ./alle_frq_dirs/sthd_af --plots``
 
-This tells the tool that the allele frequency data files are in a source directory located at './alle_frq_dirs/sthd_af' and disables making plots.
+This tells the tool that the allele frequency data files are in a source directory located at `./alle_frq_dirs/sthd_af` and tells it to make plots.
 
 
 ##### Example 3
@@ -117,7 +120,7 @@ This tells the tool that the allele frequency data files are in a source directo
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.npy``
 - ``py sslcmd.py --coan_matrix ./coan_matrix_files/co_mat.npz``
 
-These each passess in a file (*that can be loaaded with `numpy`*) containing a co-ancestry matrix of n populations to the tool.
+These each passess in a file (*that can be loaded with `numpy`*) containing a co-ancestry matrix of n populations to the tool.
 
 #### Web Frontend
 In a terminal, run: 
